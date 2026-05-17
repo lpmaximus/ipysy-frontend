@@ -7,6 +7,20 @@ Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/).
 
 ## [Unreleased]
 
+### Added (Sessão 08 — Google Analytics 4 — 2026-05-17)
+
+- `@next/third-parties@16.2.6` — lib oficial Next.js 15 para integração de terceiros com otimização de performance
+- `app/layout.tsx` — `<GoogleAnalytics gaId={NEXT_PUBLIC_GA_ID} />` no layout raiz (carrega `afterInteractive`, não bloqueia render)
+- `NEXT_PUBLIC_GA_ID` — variável de ambiente adicionada em `.env` (vazia em dev) e no secret `PROD_ENV` do GitHub
+- Measurement ID de produção: `G-HPE889SHK4` (propriedade "IPYSY" no Google Analytics 4)
+- GA só ativa quando `NEXT_PUBLIC_GA_ID` está definido — seguro em dev/CI
+
+### Fixed (Sessão 08 — Infra — 2026-05-17)
+
+- `docker-compose.prod.yml` — healthcheck alterado de `localhost` para `127.0.0.1`: a imagem standalone do Next.js só escuta em IPv4 (`0.0.0.0:3000`), mas `wget` resolvia `localhost` para `::1` (IPv6), causando "connection refused". Container agora marca `(healthy)`
+- DNS Cloudflare corrigido: removidos registros A/AAAA antigos de `ipysy.com` (apontavam para Zyro/hosting antigo); criados CNAMEs para o Cloudflare Tunnel (`8729fe76-…cfargotunnel.com`) em `ipysy.com` e `app.ipysy.com`
+- `cloudflared` — config `/etc/cloudflared/config.yml` atualizada com ingress para frontend (porta 80) e backend (porta 8080); serviço reiniciado
+
 ### Fixed (Sessão 07 — Bug next/headers em contexto client — 2026-05-17)
 
 - `lib/api/waitlist.ts` — import corrigido de `@/lib/http` (barrel) para `@/lib/http/http-client` (direto)

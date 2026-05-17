@@ -21,7 +21,7 @@
 
 | Pasta | Conteúdo |
 |-------|----------|
-| `technical/` | HTTP-CLIENT.md, BFF-PATTERN.md |
+| `technical/` | [HTTP-CLIENT.md](technical/HTTP-CLIENT.md), [BFF-PATTERN.md](technical/BFF-PATTERN.md), [ANALYTICS.md](technical/ANALYTICS.md) |
 | `architecture/` | Decisões de arquitetura frontend (ADRs) |
 | `design/` | Design system, guidelines de UI/UX |
 | `api-integration/` | Contratos de integração com o backend |
@@ -51,6 +51,7 @@
 
 - **API em produção**: [https://api.ipysy.com](https://api.ipysy.com)
 - **Infográfico da arquitetura**: [https://api.ipysy.com/static/infographic.html](https://api.ipysy.com/static/infographic.html)
+- **Google Analytics 4**: [https://analytics.google.com](https://analytics.google.com) (Measurement ID: `G-HPE889SHK4`)
 - **Backend**: `C:\Users\lgfcr\apps\paulo\ipysy-backend`
 
 ---

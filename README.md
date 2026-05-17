@@ -53,6 +53,7 @@ Usuários submetem previsões, o motor matemático calcula Brier Score, IGCI, Δ
 | Testes E2E | **Playwright** |
 | Mocks de integração | **MSW (Mock Service Worker)** |
 | Observabilidade | **@opentelemetry/sdk-trace-web + SigNoz** |
+| Analytics | **Google Analytics 4** via `@next/third-parties` (`G-HPE889SHK4`) |
 | i18n | **next-intl** (pt-BR base, en-US no H1) |
 
 **Deploy**: Docker no Hetzner (mesma rede interna do backend, latência < 1ms) + Cloudflare Tunnel  
@@ -97,7 +98,8 @@ Usuários submetem previsões, o motor matemático calcula Brier Score, IGCI, Δ
 | Scenario | 9019 | Cenários (DEFERRED) |
 
 **Autenticação**: Phantom Token Pattern — o frontend recebe um UUID opaco (nunca JWT direto).  
-**Todas as chamadas** vão para `https://api.ipysy.com` (Gateway).
+**Todas as chamadas** vão para `https://api.ipysy.com` (Gateway).  
+**Analytics**: Google Analytics 4 (`G-HPE889SHK4`) via `@next/third-parties` — painel em [analytics.google.com](https://analytics.google.com).
 
 ---
 
