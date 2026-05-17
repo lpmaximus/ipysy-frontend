@@ -1,0 +1,62 @@
+version: '3.9'
+
+services:
+  # ========================================
+  # IPYSY Frontend — Next.js 15 (Desenvolvimento Local)
+  # Imagem: build local a partir do Dockerfile
+  # Porta: 80 (host) → 3000 (container)
+  # Rede: externa ipysy-net criada pelo backend
+  #
+  # PRÉ-REQUISITO: Backend deve estar rodando
+  #   cd ../ipysy-backend && docker compose up -d
+  #
+  # USO:
+  #   docker compose --env-file .env up --build
+  # ========================================
+
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: development
+    container_name: ipysy-frontend
+    image: ${FRONTEND_IMAGE:-ipysy-frontend:latest}
+    ports:
+      - "80:3000"
+    environment:
+      NODE_ENV: development
+      NEXT_PUBLIC_ENVIRONMENT: ${NEXT_PUBLIC_ENVIRONMENT:-development}
+      # URLs públicas (client-side — expostas no navegador)
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8080}
+      NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:-http://localhost}
+      NEXT_PUBLIC_VERSION: ${NEXT_PUBLIC_VERSION:-0.0.1-dev}
+      # URL interna — usada APENAS pelo servidor Next.js (SSR/Route Handlers)
+      # Comunica via rede Docker diretamente com o Gateway sem passar pelo Cloudflare
+      API_BASE_URL: ${API_BASE_URL:-http://gateway:8080}
+      # OpenTelemetry (SigNoz) — privado, server-side apenas
+      OTEL_ENDPOINT: ${OTEL_ENDPOINT:-http://otel-collector:4317}
+      OTEL_SERVICE_NAME: ${OTEL_SERVICE_NAME:-ipysy-frontend}
+      # Next.js
+      PORT: 3000
+      HOSTNAME: 0.0.0.0
+    env_file:
+      - .env
+    mem_limit: 512m
+    memswap_limit: 512m
+    healthcheck:
+      test: [ "CMD", "wget", "--spider", "-q", "http://localhost:3000/api/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    networks:
+      - ipysy-net
+    restart: unless-stopped
+
+networks:
+  # Rede criada pelo backend (ipysy-backend/docker-compose.yml)
+  # Nome padrão quando rodado da pasta ipysy-backend: ipysy-backend_ipysy-net
+  # Ajuste BACKEND_NETWORK no .env se o nome for diferente no seu ambiente
+  ipysy-net:
+    external: true
+    name: ${BACKEND_NETWORK:-ipysy-backend_ipysy-net}

@@ -1,0 +1,204 @@
+# =============================================================
+# CircleCI — IPYSY Frontend
+# =============================================================
+# Fallback CI: acionado pelo GitHub Actions somente quando
+# o GA falha (build, testes ou deploy).
+#
+# SETUP (executar 1 vez):
+#   1. Criar conta em https://circleci.com
+#   2. Conectar o repositório ipysy-frontend
+#   3. Adicionar variáveis de ambiente no projeto CircleCI:
+#        GHCR_TOKEN   → GitHub Personal Access Token (write:packages)
+#        GHCR_USER    → lpmaximus
+#        HETZNER_HOST → 46.62.230.6
+#        HETZNER_USER → deploy
+#        HETZNER_KEY  → chave SSH privada em base64 (sem newlines)
+#   4. Preencher CIRCLE_PROJECT_SLUG no .github/workflows/ci-cd.yml
+#      após criar o projeto no CircleCI
+#
+# PLANO: Free tier é suficiente para fallback esporádico.
+#        Se uso frequente → Performance ($15/mês)
+# =============================================================
+
+version: 2.1
+
+# ─────────────────────────────────────────────────────────
+# Executors
+# ─────────────────────────────────────────────────────────
+executors:
+  node20:
+    docker:
+      - image: node:20-alpine
+    resource_class: medium
+    environment:
+      YARN_CACHE_FOLDER: ~/.yarn-cache
+
+  docker-machine:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: medium
+
+# ─────────────────────────────────────────────────────────
+# Commands reutilizáveis
+# ─────────────────────────────────────────────────────────
+commands:
+  restore_yarn_cache:
+    steps:
+      - restore_cache:
+          keys:
+            - yarn-v1-{{ checksum "yarn.lock" }}
+            - yarn-v1-
+
+  save_yarn_cache:
+    steps:
+      - save_cache:
+          paths:
+            - ~/.yarn-cache
+          key: yarn-v1-{{ checksum "yarn.lock" }}
+
+  setup_ssh:
+    steps:
+      - run:
+          name: Configurar SSH para Hetzner
+          command: |
+            mkdir -p ~/.ssh
+            echo "${HETZNER_KEY}" | tr -d '\r\n ' | base64 -d > ~/.ssh/id_rsa
+            chmod 600 ~/.ssh/id_rsa
+            ssh-keyscan -H ${HETZNER_HOST} >> ~/.ssh/known_hosts 2>/dev/null
+            echo "StrictHostKeyChecking accept-new" >> ~/.ssh/config
+
+# ─────────────────────────────────────────────────────────
+# Jobs
+# ─────────────────────────────────────────────────────────
+jobs:
+  # ─────────────────
+  # 1. Testes e typecheck
+  # ─────────────────
+  unit-tests:
+    executor: node20
+    steps:
+      - checkout
+      - restore_yarn_cache
+      - run:
+          name: Instalar dependências
+          command: yarn install --frozen-lockfile
+      - save_yarn_cache
+      - run:
+          name: Typecheck
+          command: yarn typecheck
+      - run:
+          name: Testes unitários
+          command: yarn test --reporter=verbose
+          no_output_timeout: 10m
+      - store_test_results:
+          path: coverage
+      - store_artifacts:
+          path: coverage
+          destination: coverage
+
+  # ─────────────────
+  # 2. Build Docker + Push GHCR
+  # ─────────────────
+  build-push:
+    executor: docker-machine
+    steps:
+      - checkout
+      - run:
+          name: Login no GHCR
+          command: |
+            echo "${GHCR_TOKEN}" | docker login ghcr.io -u "${GHCR_USER}" --password-stdin
+      - run:
+          name: Build imagem de produção
+          command: |
+            IMAGE="ghcr.io/${GHCR_USER}/ipysy-frontend"
+            docker build \
+              --target production \
+              --build-arg NUXT_PUBLIC_API_URL=https://api.ipysy.com \
+              --build-arg NUXT_PUBLIC_ENVIRONMENT=production \
+              --build-arg NUXT_PUBLIC_VERSION=${CIRCLE_SHA1} \
+              -t "$IMAGE:${CIRCLE_SHA1}" \
+              -t "$IMAGE:latest" \
+              .
+          no_output_timeout: 15m
+      - run:
+          name: Verificar source maps (ADR-017)
+          command: |
+            IMAGE="ghcr.io/${GHCR_USER}/ipysy-frontend"
+            docker run --rm --entrypoint sh "$IMAGE:${CIRCLE_SHA1}" \
+              -c 'find /app/.output -name "*.map" | grep -q . && echo "ERRO: source maps!" && exit 1 || echo "✅ Sem source maps"'
+      - run:
+          name: Push imagens para GHCR
+          command: |
+            IMAGE="ghcr.io/${GHCR_USER}/ipysy-frontend"
+            docker push "$IMAGE:${CIRCLE_SHA1}"
+            docker push "$IMAGE:latest"
+            echo "✅ Imagens publicadas: $IMAGE:${CIRCLE_SHA1}"
+
+  # ─────────────────
+  # 3. Deploy Hetzner
+  # ─────────────────
+  deploy-hetzner:
+    executor: node20
+    steps:
+      - checkout
+      - run:
+          name: Instalar SSH client
+          command: apk add --no-cache openssh-client
+      - setup_ssh
+      - run:
+          name: Criar diretório de deploy (se necessário)
+          command: |
+            ssh ${HETZNER_USER}@${HETZNER_HOST} "mkdir -p /home/deploy/ipysy-frontend"
+      - run:
+          name: Atualizar código no servidor
+          command: |
+            ssh ${HETZNER_USER}@${HETZNER_HOST} \
+              "cd /home/deploy/ipysy-frontend && \
+               git stash --include-untracked || true && \
+               git fetch origin && \
+               git checkout main && \
+               git pull origin main"
+      - run:
+          name: Login GHCR no servidor
+          command: |
+            ssh ${HETZNER_USER}@${HETZNER_HOST} \
+              "echo '${GHCR_TOKEN}' | docker login ghcr.io -u ${GHCR_USER} --password-stdin"
+      - run:
+          name: Pull e restart frontend
+          command: |
+            ssh ${HETZNER_USER}@${HETZNER_HOST} \
+              "cd /home/deploy/ipysy-frontend && \
+               docker compose -f docker-compose.prod.yml --env-file .env.prod pull && \
+               docker compose -f docker-compose.prod.yml --env-file .env.prod up -d --force-recreate"
+      - run:
+          name: Health check (30s warmup)
+          command: |
+            sleep 30
+            ssh ${HETZNER_USER}@${HETZNER_HOST} \
+              "curl -sf http://localhost/api/health | grep -q 'ok' && echo '✅ Frontend OK' || echo '⚠️ Aquecendo...'"
+          when: always
+
+# ─────────────────────────────────────────────────────────
+# Workflows
+# ─────────────────────────────────────────────────────────
+workflows:
+  main-pipeline:
+    jobs:
+      - unit-tests:
+          filters:
+            branches:
+              only: main
+
+      - build-push:
+          requires:
+            - unit-tests
+          filters:
+            branches:
+              only: main
+
+      - deploy-hetzner:
+          requires:
+            - build-push
+          filters:
+            branches:
+              only: main

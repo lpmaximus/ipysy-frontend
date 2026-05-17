@@ -1,7 +1,9 @@
 # Índice de Documentos de Negócio
 
 > Documentos gerados pelo SEO e pelos analistas da L2Tech para o projeto IPYSY.  
-> Importados em 2026-05-14. Total: 40 arquivos em 11 subpastas.
+> Importados em 2026-05-14. Última atualização: 2026-05-16. Total: 40 arquivos em 11 subpastas.
+>
+> **Status do projeto**: Sprint 0 ✅ Concluído — `/coming-soon` live + integração Waitlist (`POST /api/v1/users/waitlist`)
 
 ---
 

@@ -1,0 +1,30 @@
+{
+  "common": {
+    "loading": "Loading...",
+    "error": "An error occurred. Please try again.",
+    "retry": "Retry",
+    "back": "Back",
+    "save": "Save",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "close": "Close"
+  },
+  "auth": {
+    "login": "Sign in",
+    "logout": "Sign out",
+    "signup": "Create account",
+    "email": "Email",
+    "password": "Password"
+  },
+  "waitlist": {
+    "title": "Coming Soon",
+    "description": "Be one of the first to predict the future.",
+    "emailPlaceholder": "your@email.com",
+    "submit": "Request Access",
+    "submitting": "Sending...",
+    "success": "Request received! You'll be among the first to be invited.",
+    "alreadyRegistered": "You're already on the list! You'll be among the first to know.",
+    "invalidEmail": "Invalid email. Please check the address entered.",
+    "genericError": "Error processing your request. Please try again."
+  }
+}

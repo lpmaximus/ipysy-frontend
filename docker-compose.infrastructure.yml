@@ -1,0 +1,50 @@
+version: '3.9'
+
+# ========================================
+# IPYSY Frontend — Infraestrutura Local
+# Para desenvolvimento isolado SEM o backend rodando localmente.
+#
+# Fornece um proxy Nginx que roteia chamadas de API para:
+#   - API remota de staging/produção (padrão)
+#   - OU para o backend local via GATEWAY_UPSTREAM
+#
+# USO (isolado, sem backend local):
+#   docker compose -f docker-compose.infrastructure.yml --env-file .env up -d
+#   # Frontend nativo: npm run dev
+#   # O dev server aponta NUXT_API_BASE_URL para http://localhost:8080
+#
+# USO (combinado com backend local):
+#   docker compose -f docker-compose.infrastructure.yml \
+#                  -f docker-compose.yml \
+#                  --env-file .env up --build
+# ========================================
+
+services:
+
+  # === Proxy Gateway Local ===
+  # Roteia /api/* para o Gateway real (remoto ou local)
+  # Útil para desenvolver o frontend sem precisar do backend no Docker
+  api-proxy:
+    image: nginx:1.27-alpine
+    container_name: ipysy-frontend-proxy
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./infrastructure/nginx/proxy.conf:/etc/nginx/conf.d/default.conf:ro
+    environment:
+      GATEWAY_UPSTREAM: ${GATEWAY_UPSTREAM:-https://api.ipysy.com}
+    mem_limit: 64m
+    memswap_limit: 64m
+    healthcheck:
+      test: [ "CMD", "wget", "--spider", "-q", "http://localhost:8080/health" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - frontend-infra-net
+    restart: unless-stopped
+
+networks:
+  frontend-infra-net:
+    driver: bridge
+    name: ipysy-frontend-infra

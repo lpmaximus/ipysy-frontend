@@ -1,0 +1,1690 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>iPYSY — Mockup Completo v2</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* ═══════════════════════════════════════════════════════════════
+   DESIGN TOKENS — homepage v5b (fonte única da verdade)
+   ═══════════════════════════════════════════════════════════════ */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  /* Paleta primária */
+  --ink:     #1C2333;
+  --ink-2:   #384257;
+  --ink-3:   #6B7A99;
+  --ink-4:   #9AA4BC;
+  --surface: #FFFFFF;
+  --surface-2:#F4F6FA;
+  --surface-3:#E8ECF2;
+  --line:    #D5DAE4;
+  --line-2:  #BFC7D5;
+  /* Ação */
+  --accent:    #2B7A78;
+  --accent-dk: #1A5653;
+  --accent-lt: #3AAFA9;
+  --green-muted:#E6FBF5;
+  /* Secundária */
+  --blue:    #233670;
+  --blue-lt: #4361A6;
+  /* Estados */
+  --warn:    #D64545;
+  --warn-bg: rgba(214,69,69,.08);
+  --warn-lite:#FEE2E2;
+  /* Tipografia */
+  --sans:'Inter',system-ui,-apple-system,sans-serif;
+  --mono:'JetBrains Mono',monospace;
+  /* Layout */
+  --w:1200px;
+  --r:10px;
+  --r-sm:7px;
+  --r-pill:999px;
+  /* Sombras */
+  --shadow-card:0 1px 3px rgba(28,35,51,.07),0 1px 2px rgba(28,35,51,.05);
+  --shadow-hover:0 4px 16px rgba(28,35,51,.1);
+  --shadow-modal:0 20px 60px rgba(28,35,51,.2);
+}
+
+/* ── Base ─────────────────────────────────────── */
+html{font-size:15px;-webkit-font-smoothing:antialiased}
+body{font-family:var(--sans);color:var(--ink);background:#EDF2F7;line-height:1.6}
+a{text-decoration:none;color:inherit}
+button{font-family:var(--sans);cursor:pointer;border:none}
+input,select,textarea{font-family:var(--sans)}
+
+/* ── Animations ───────────────────────────────── */
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+@keyframes ticker{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
+@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+@keyframes slideUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+
+/* ═══════════════════════════════════════════════════════════════
+   NAVIGATOR SHELL
+   ═══════════════════════════════════════════════════════════════ */
+#shell{display:flex;min-height:100vh}
+
+/* Left panel */
+#nav-panel{
+  width:252px;flex-shrink:0;background:var(--ink);
+  display:flex;flex-direction:column;
+  position:sticky;top:0;height:100vh;overflow-y:auto;
+  scrollbar-width:thin;scrollbar-color:rgba(255,255,255,.12) transparent;
+}
+#nav-panel::-webkit-scrollbar{width:4px}
+#nav-panel::-webkit-scrollbar-thumb{background:rgba(255,255,255,.12);border-radius:4px}
+
+.np-logo{
+  padding:18px 16px 14px;
+  border-bottom:1px solid rgba(255,255,255,.07);
+}
+.np-logo .wordmark{font-size:20px;font-weight:800;letter-spacing:-.03em}
+.np-logo .wordmark .i{color:var(--accent-lt)}
+.np-logo .wordmark .t{color:#fff}
+.np-logo .sub{font-size:10px;font-weight:600;color:rgba(255,255,255,.28);letter-spacing:.08em;margin-top:2px}
+
+.np-section{
+  padding:12px 12px 2px;
+  font-size:9px;font-weight:800;color:rgba(255,255,255,.25);
+  letter-spacing:.12em;text-transform:uppercase;
+}
+.np-item{
+  display:flex;align-items:center;gap:8px;
+  padding:7px 12px;margin:1px 6px;border-radius:6px;
+  font-size:12px;font-weight:500;color:rgba(255,255,255,.55);
+  cursor:pointer;transition:all .15s;
+}
+.np-item:hover{color:rgba(255,255,255,.9);background:rgba(255,255,255,.07)}
+.np-item.active{color:#fff;background:rgba(255,255,255,.12)}
+.np-item .pip{
+  width:5px;height:5px;border-radius:50%;
+  background:rgba(255,255,255,.18);flex-shrink:0;transition:background .15s;
+}
+.np-item.active .pip{background:var(--accent-lt)}
+.np-badge{
+  margin-left:auto;font-size:9px;font-weight:700;
+  padding:2px 6px;border-radius:var(--r-pill);
+  background:rgba(255,255,255,.1);color:rgba(255,255,255,.5);
+}
+
+/* Content area */
+#content{flex:1;min-width:0;display:flex;flex-direction:column;overflow:hidden}
+
+/* Screen label chip */
+#screen-label{
+  position:fixed;bottom:14px;right:14px;
+  background:var(--ink);color:rgba(255,255,255,.45);
+  font-size:10px;font-weight:700;padding:4px 10px;
+  border-radius:var(--r-pill);letter-spacing:.06em;z-index:9999;
+  border:1px solid rgba(255,255,255,.1);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   SCREEN BASE
+   ═══════════════════════════════════════════════════════════════ */
+.screen{display:none;flex-direction:column;min-height:100vh;animation:fadeUp .2s ease}
+.screen.active{display:flex}
+.screen-scroll{flex:1;overflow-y:auto;background:var(--surface)}
+
+/* ═══════════════════════════════════════════════════════════════
+   NAV BAR (app nav — homepage style)
+   ═══════════════════════════════════════════════════════════════ */
+.topnav{
+  position:sticky;top:0;z-index:100;
+  height:52px;background:var(--ink);
+  border-bottom:1px solid rgba(255,255,255,.06);
+}
+.nav-in{
+  display:flex;align-items:center;
+  max-width:var(--w);margin:0 auto;padding:0 24px;height:100%;
+}
+.n-logo{font-size:21px;font-weight:800;letter-spacing:-.4px;margin-right:28px;flex-shrink:0}
+.n-logo .i{color:var(--accent-lt)}.n-logo .t{color:#fff}
+.n-links{display:flex;gap:2px;flex:1}
+.n-link{
+  padding:6px 13px;border-radius:6px;font-size:13px;font-weight:600;
+  color:rgba(255,255,255,.52);cursor:pointer;transition:all .15s;white-space:nowrap;
+}
+.n-link:hover{color:#fff;background:rgba(255,255,255,.08)}
+.n-link.active{color:#fff}
+.n-right{display:flex;align-items:center;gap:8px;margin-left:auto}
+.n-search{
+  display:flex;align-items:center;gap:6px;
+  background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.1);
+  border-radius:8px;padding:6px 12px;width:196px;cursor:text;
+}
+.n-search svg{color:rgba(255,255,255,.38);flex-shrink:0}
+.n-search span{color:rgba(255,255,255,.33);font-size:12px}
+.n-avatar{
+  width:30px;height:30px;border-radius:50%;
+  background:var(--blue-lt);color:#fff;
+  display:flex;align-items:center;justify-content:center;
+  font-size:11px;font-weight:800;flex-shrink:0;
+}
+.n-btn-ghost{background:0;color:rgba(255,255,255,.65);font-size:12px;font-weight:700;padding:6px 8px;transition:color .15s}
+.n-btn-ghost:hover{color:#fff}
+.n-btn-accent{
+  background:var(--accent);color:#fff;font-size:12px;font-weight:700;
+  padding:7px 16px;border-radius:7px;transition:background .15s;
+}
+.n-btn-accent:hover{background:var(--accent-dk)}
+
+/* ═══════════════════════════════════════════════════════════════
+   TICKER
+   ═══════════════════════════════════════════════════════════════ */
+.ticker{
+  background:var(--surface-2);border-bottom:1px solid var(--line);
+  height:32px;overflow:hidden;display:flex;align-items:center;
+}
+.ticker-tag{
+  background:var(--accent);color:#fff;font-size:9px;font-weight:800;
+  letter-spacing:.1em;text-transform:uppercase;
+  padding:0 14px;height:100%;display:flex;align-items:center;gap:5px;flex-shrink:0;
+}
+.ticker-dot{width:5px;height:5px;border-radius:50%;background:#fff;animation:pulse 1.4s infinite}
+.ticker-track{
+  flex:1;overflow:hidden;
+  -webkit-mask-image:linear-gradient(90deg,transparent,#000 28px,#000 calc(100% - 28px),transparent);
+}
+.ticker-scroll{
+  display:flex;gap:28px;white-space:nowrap;
+  animation:ticker 42s linear infinite;
+  font-size:12px;color:var(--ink-3);padding:0 16px;
+}
+.ticker-scroll strong{color:var(--ink);font-weight:700}
+.ticker-scroll .src{color:var(--accent-dk);font-weight:800;font-size:10px;text-transform:uppercase;letter-spacing:.03em}
+.ticker-scroll .sep{color:var(--line-2)}
+
+/* ═══════════════════════════════════════════════════════════════
+   CATEGORY BAR
+   ═══════════════════════════════════════════════════════════════ */
+.catbar{
+  border-bottom:1px solid var(--line);background:var(--surface);
+  position:sticky;top:52px;z-index:90;overflow-x:auto;scrollbar-width:none;
+}
+.catbar::-webkit-scrollbar{display:none}
+.catbar-in{display:flex;max-width:var(--w);margin:0 auto;padding:0 24px;gap:0}
+.cat-t{
+  padding:10px 15px;font-size:12px;font-weight:600;color:var(--ink-3);
+  cursor:pointer;white-space:nowrap;border-bottom:2px solid transparent;
+  margin-bottom:-1px;transition:all .15s;
+}
+.cat-t:hover{color:var(--ink)}
+.cat-t.active{color:var(--ink);border-bottom-color:var(--accent)}
+.cat-t .cnt{
+  font-size:9px;background:var(--surface-3);color:var(--ink-4);
+  padding:1px 5px;border-radius:var(--r-pill);margin-left:4px;font-weight:700;
+}
+.cat-t.active .cnt{background:rgba(43,122,120,.1);color:var(--accent-dk)}
+
+/* ═══════════════════════════════════════════════════════════════
+   ONBOARDING LAYOUT
+   ═══════════════════════════════════════════════════════════════ */
+.ob-wrap{flex:1;display:flex;flex-direction:column;background:var(--surface-2)}
+.ob-header{
+  height:56px;background:var(--surface);border-bottom:1px solid var(--line);
+  display:flex;align-items:center;justify-content:center;
+}
+.ob-header .logo{font-size:23px;font-weight:800;letter-spacing:-.03em}
+.ob-header .logo .i{color:var(--accent-lt)}.ob-header .logo .t{color:var(--ink)}
+.ob-progress-bar{padding:20px 16px 0}
+.ob-progress-wrap{width:100%;max-width:360px;margin:0 auto}
+.ob-bars{display:flex;gap:6px;margin-bottom:5px}
+.ob-bar{flex:1;height:3px;border-radius:var(--r-pill)}
+.ob-bar.done{background:var(--accent)}
+.ob-bar.cur{background:var(--blue)}
+.ob-bar.todo{background:var(--line)}
+.ob-bar-labels{display:flex;justify-content:space-between}
+.ob-bar-labels span{font-size:10px;font-weight:600}
+.ob-bar-labels .done{color:var(--accent)}
+.ob-bar-labels .cur{color:var(--ink-2)}
+.ob-bar-labels .todo{color:var(--ink-4)}
+.ob-body{flex:1;display:flex;align-items:center;justify-content:center;padding:28px 16px}
+.ob-card{width:100%;max-width:440px;animation:slideUp .28s ease}
+.ob-footer-txt{padding:16px;text-align:center;font-size:11px;color:var(--ink-4)}
+
+/* ═══════════════════════════════════════════════════════════════
+   ADMIN LAYOUT
+   ═══════════════════════════════════════════════════════════════ */
+.admin-topnav{
+  height:52px;background:var(--ink);display:flex;align-items:center;
+  padding:0 24px;gap:16px;border-bottom:1px solid rgba(255,255,255,.07);
+  position:sticky;top:0;z-index:100;
+}
+.admin-badge{
+  font-size:9px;font-weight:800;color:rgba(255,255,255,.3);
+  border:1px solid rgba(255,255,255,.18);padding:2px 7px;border-radius:4px;letter-spacing:.08em;
+}
+.admin-layout{display:flex;flex:1}
+.admin-sidebar{
+  width:220px;flex-shrink:0;background:var(--ink);
+  min-height:calc(100vh - 52px);
+}
+.admin-sidebar nav{padding:14px 10px}
+.admin-nav-item{
+  display:flex;align-items:center;gap:9px;padding:9px 11px;
+  border-radius:6px;font-size:12px;font-weight:500;
+  color:rgba(255,255,255,.5);margin-bottom:2px;cursor:pointer;transition:all .15s;
+}
+.admin-nav-item:hover{color:rgba(255,255,255,.88);background:rgba(255,255,255,.07)}
+.admin-nav-item.active{color:#fff;background:rgba(255,255,255,.13)}
+.admin-main{flex:1;padding:24px;min-width:0;background:var(--surface-2)}
+
+/* ═══════════════════════════════════════════════════════════════
+   APP LAYOUT (sidebar + main + optional context)
+   ═══════════════════════════════════════════════════════════════ */
+.app-wrap{
+  display:flex;flex:1;max-width:1280px;
+  width:100%;margin:0 auto;padding:24px 24px 40px;gap:28px;
+  background:var(--surface-2);
+  align-items:flex-start;
+}
+.app-sidebar{width:240px;flex-shrink:0}
+.app-main{flex:1;min-width:0}
+.app-context{width:300px;flex-shrink:0}
+
+/* Sidebar widget */
+.side-card{
+  background:var(--surface);border:1px solid var(--line);
+  border-radius:var(--r);padding:16px;margin-bottom:14px;
+}
+.sc-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:11px}
+.sc-title{font-size:13px;font-weight:800;color:var(--ink)}
+.sc-more{font-size:11px;font-weight:600;color:var(--blue-lt);cursor:pointer}
+.side-link{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:6px 8px;border-radius:5px;font-size:12px;font-weight:500;
+  color:var(--ink-2);cursor:pointer;transition:all .15s;
+}
+.side-link:hover,.side-link.active{background:var(--surface-3);color:var(--ink)}
+.side-link .cnt{font-size:10px;font-weight:700;color:var(--ink-4)}
+.side-section-title{
+  font-size:9px;font-weight:800;color:var(--ink-4);text-transform:uppercase;
+  letter-spacing:.1em;margin:12px 0 6px;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   COMMON COMPONENTS
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ── Cards ─────── */
+.card{
+  background:var(--surface);border:1px solid var(--line);
+  border-radius:var(--r);padding:20px;box-shadow:var(--shadow-card);
+}
+.card-sm{padding:14px 16px}
+.card-lg{padding:24px}
+
+/* ── Event card (homepage style) ─────── */
+.ev{
+  background:var(--surface);border:1px solid var(--line);border-radius:var(--r);
+  padding:18px;cursor:pointer;transition:all .2s;
+}
+.ev:hover{border-color:var(--line-2);box-shadow:var(--shadow-hover)}
+.ev-top{
+  display:flex;align-items:center;gap:6px;margin-bottom:8px;
+  font-size:10px;font-weight:700;color:var(--ink-4);text-transform:uppercase;letter-spacing:.06em;
+}
+.ev-top .ev-date{margin-left:auto;font-weight:600;text-transform:none;letter-spacing:0}
+.ev-title{
+  font-size:14px;font-weight:700;color:var(--ink);line-height:1.35;margin-bottom:11px;
+  letter-spacing:-.01em;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;
+}
+.ev:hover .ev-title{color:var(--blue-lt)}
+.ev-bar-row{display:flex;justify-content:space-between;font-size:12px;font-weight:700;margin-bottom:4px}
+.ev-bar-row .y{color:var(--accent-dk)}.ev-bar-row .n{color:var(--warn)}
+.ev-track{height:6px;border-radius:var(--r-pill);background:var(--warn-bg);overflow:hidden;margin-bottom:10px}
+.ev-fill{height:100%;border-radius:var(--r-pill);background:var(--accent)}
+.ev-foot{display:flex;gap:12px;font-size:11px;color:var(--ink-4)}
+.ev-foot .trend{font-weight:700}
+.ev-foot .trend.up{color:var(--accent-dk)}.ev-foot .trend.dn{color:var(--warn)}
+.ev-premium{
+  display:inline-flex;align-items:center;gap:4px;margin-top:8px;
+  font-size:10px;font-weight:700;color:var(--blue-lt);
+  background:rgba(67,97,166,.07);padding:3px 9px;border-radius:var(--r-pill);
+}
+/* Sparkline */
+.ev-spark{display:flex;align-items:flex-end;gap:1.5px;height:18px;margin-bottom:8px}
+.ev-spark .b{flex:1;border-radius:1px 1px 0 0;background:var(--line);min-width:3px}
+.ev-spark .b:last-child{background:var(--accent)}
+/* News badge */
+.ev-news-badge{
+  display:inline-flex;align-items:center;gap:4px;margin-top:8px;
+  font-size:10px;font-weight:600;color:#92400E;
+  background:#FFFBEB;border:1px solid #FDE68A;border-radius:5px;padding:3px 9px;
+}
+.ev-news-badge .d{width:4px;height:4px;border-radius:50%;background:#F59E0B}
+/* Multi-choice options */
+.ev-opts{display:flex;flex-direction:column;gap:4px;margin-bottom:10px}
+.ev-opt{
+  display:flex;align-items:center;gap:8px;padding:7px 10px;
+  border:1px solid var(--line);border-radius:6px;transition:all .15s;font-size:12px;
+}
+.ev-opt:hover{border-color:var(--line-2);background:var(--surface-2)}
+.ev-opt .nm{flex:1;font-weight:500;color:var(--ink-2)}
+.ev-opt .bar{width:44px;height:4px;border-radius:4px;background:var(--surface-3);overflow:hidden}
+.ev-opt .bar-f{height:100%;border-radius:4px;background:var(--blue)}
+.ev-opt .pct{font-size:13px;font-weight:800;color:var(--ink);min-width:34px;text-align:right}
+/* Dual consensus */
+.ev-dual{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
+.ev-dual-item{padding:10px;border-radius:8px;text-align:center}
+.ev-dual-item.gen{background:var(--surface-2);border:1px solid var(--line)}
+.ev-dual-item.cal{background:rgba(43,122,120,.04);border:1px solid rgba(43,122,120,.18)}
+.ev-dual-label{font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px}
+.ev-dual-item.gen .ev-dual-label{color:var(--ink-4)}
+.ev-dual-item.cal .ev-dual-label{color:var(--accent-dk)}
+.ev-dual-val{font-size:19px;font-weight:800;line-height:1}
+.ev-dual-item.gen .ev-dual-val{color:var(--ink)}
+.ev-dual-item.cal .ev-dual-val{color:var(--accent-dk)}
+.ev-dual-sub{font-size:9px;color:var(--ink-4);margin-top:2px}
+
+/* ── IGCI Badge (adapted) ─────── */
+.igci{
+  display:inline-flex;flex-direction:column;align-items:center;
+  border-radius:8px;padding:8px 12px;gap:1px;
+}
+.igci.high{background:rgba(43,122,120,.08);}.igci.high .igci-val{color:var(--accent-dk)}
+.igci.mid{background:rgba(236,201,75,.1);}.igci.mid .igci-val{color:#92600A}
+.igci.low{background:rgba(214,69,69,.08);}.igci.low .igci-val{color:var(--warn)}
+.igci-val{font-weight:800;letter-spacing:-.04em;line-height:1}
+.igci.sm .igci-val{font-size:16px}
+.igci.md .igci-val{font-size:24px}
+.igci.lg .igci-val{font-size:38px}
+.igci-label{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--ink-4)}
+
+/* ── Brier Meter ─────── */
+.brier-wrap{display:flex;flex-direction:column;gap:6px}
+.brier-head{display:flex;align-items:baseline;justify-content:space-between}
+.brier-lbl{font-size:11px;color:var(--ink-4);font-weight:500}
+.brier-score{font-size:17px;font-weight:800;color:var(--ink);letter-spacing:-.02em}
+.brier-quality{font-size:11px;font-weight:700;margin-left:5px}
+.brier-quality.excellent{color:var(--accent-dk)}
+.brier-quality.good{color:#D69E2E}
+.brier-quality.regular{color:var(--warn)}
+.brier-track{height:5px;background:var(--surface-3);border-radius:var(--r-pill);overflow:hidden}
+.brier-fill{height:100%;border-radius:var(--r-pill);transition:width .7s}
+.brier-fill.excellent{background:var(--accent)}
+.brier-fill.good{background:#ECC94B}
+.brier-fill.regular{background:var(--warn)}
+
+/* ── Buttons ─────── */
+.btn{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:9px 18px;border-radius:7px;font-size:12px;font-weight:700;
+  cursor:pointer;transition:all .15s;border:none;
+}
+.btn-primary{background:var(--blue);color:#fff}.btn-primary:hover{background:var(--ink)}
+.btn-accent{background:var(--accent);color:#fff}.btn-accent:hover{background:var(--accent-dk)}
+.btn-ghost{background:0;border:1.5px solid var(--line);color:var(--ink-2)}.btn-ghost:hover{border-color:var(--ink-4);background:var(--surface-2)}
+.btn-warn{background:var(--warn);color:#fff}
+.btn-continue{
+  width:100%;padding:13px;border-radius:8px;font-size:13px;font-weight:700;
+  text-align:center;cursor:pointer;transition:all .15s;border:none;
+}
+.btn-continue.on{background:var(--accent);color:#fff}.btn-continue.on:hover{background:var(--accent-dk)}
+.btn-continue.off{background:var(--surface-3);color:var(--ink-4);cursor:not-allowed}
+
+/* ── Inputs ─────── */
+.field{display:flex;flex-direction:column;gap:5px}
+.field label{font-size:11px;font-weight:700;color:var(--ink-2);letter-spacing:.01em}
+.inp{
+  padding:12px 14px;border:1.5px solid var(--line);border-radius:8px;
+  font-size:14px;color:var(--ink);background:var(--surface);outline:none;width:100%;
+  transition:border-color .15s,box-shadow .15s;
+}
+.inp:focus{border-color:var(--blue-lt);box-shadow:0 0 0 3px rgba(67,97,166,.1)}
+.inp:hover:not(:focus){border-color:var(--line-2)}
+.inp.err{border-color:var(--warn)}
+textarea.inp{resize:vertical;min-height:90px}
+
+/* ── Badges / pills ─────── */
+.badge{display:inline-flex;align-items:center;padding:3px 8px;border-radius:var(--r-pill);font-size:10px;font-weight:700}
+.badge-green{background:rgba(43,122,120,.1);color:var(--accent-dk)}
+.badge-blue{background:rgba(35,54,112,.08);color:var(--blue-lt)}
+.badge-yellow{background:#FFFBEB;color:#92400E}
+.badge-red{background:var(--warn-lite);color:#991B1B}
+.badge-gray{background:var(--surface-3);color:var(--ink-3)}
+
+/* ── Tables ─────── */
+.tbl-wrap{overflow:hidden;border-radius:var(--r);border:1px solid var(--line)}
+.tbl-wrap table{background:var(--surface);width:100%;border-collapse:collapse}
+.tbl-wrap th{
+  text-align:left;font-size:10px;font-weight:800;color:var(--ink-4);
+  padding:10px 18px;background:var(--surface-2);border-bottom:1px solid var(--line);
+  letter-spacing:.04em;text-transform:uppercase;
+}
+.tbl-wrap td{padding:12px 18px;border-bottom:1px solid var(--line);font-size:13px}
+.tbl-wrap tr:last-child td{border-bottom:none}
+.tbl-wrap tr:hover td{background:var(--surface-2)}
+
+/* ── OTP ─────── */
+.otp-wrap{display:flex;gap:10px;justify-content:center}
+.otp-box{
+  width:58px;height:62px;border:2px solid var(--line);border-radius:8px;
+  font-size:24px;font-weight:800;text-align:center;color:var(--ink);
+  outline:none;transition:border-color .15s;background:var(--surface);
+}
+.otp-box:focus{border-color:var(--blue-lt);box-shadow:0 0 0 3px rgba(67,97,166,.1)}
+.otp-box.filled{border-color:var(--accent)}
+
+/* ── Avatar ─────── */
+.av{border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;flex-shrink:0}
+.av-sm{width:30px;height:30px;font-size:11px}
+.av-md{width:40px;height:40px;font-size:14px}
+.av-lg{width:60px;height:60px;font-size:20px}
+
+/* ── KPI cards ─────── */
+.kpi-grid-2{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+.kpi-grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.kpi-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:18px}
+.kpi-icon{font-size:18px;margin-bottom:10px}
+.kpi-value{font-size:24px;font-weight:800;color:var(--ink);letter-spacing:-.04em;line-height:1}
+.kpi-label{font-size:11px;color:var(--ink-4);margin-top:4px}
+.kpi-delta{font-size:11px;font-weight:700;color:var(--accent-dk)}
+
+/* ── Post (social feed) ─────── */
+.post{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:18px}
+.post-event-ref{background:var(--surface-2);border-radius:7px;padding:10px 13px;margin:11px 0}
+.post-actions{display:flex;align-items:center;gap:14px;padding-top:11px;border-top:1px solid var(--line);margin-top:11px}
+.post-action{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--ink-4);cursor:pointer;transition:color .15s}
+.post-action:hover{color:var(--blue-lt)}
+
+/* ── Comment ─────── */
+.comment{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px;display:flex;gap:10px}
+
+/* ── Sidebar previsor item ─────── */
+.pv{display:flex;align-items:center;gap:9px;padding:8px 0;border-bottom:1px solid var(--line)}
+.pv:last-child{border-bottom:none}
+.pv-rank{font-size:14px;font-weight:800;min-width:18px}
+.pv-rank.g{color:#D69E2E}.pv-rank.s{color:#A0AEC0}.pv-rank.b{color:#C05621}
+.pv-info{flex:1;min-width:0}
+.pv-name{font-size:12px;font-weight:700;color:var(--ink)}
+.pv-meta{font-size:10px;color:var(--ink-4);margin-top:2px}
+.pv-acc{font-size:9px;font-weight:700;color:var(--accent-dk)}
+/* Sparkline bars */
+.mini-track{display:flex;align-items:flex-end;gap:1.5px;height:14px;margin-top:3px}
+.mini-track .b{width:3px;border-radius:1px 1px 0 0;min-height:2px}
+.mini-track .b.g{background:var(--accent)}.mini-track .b.o{background:#F59E0B}.mini-track .b.r{background:var(--warn);opacity:.4}
+
+/* ── Trend sidebar ─────── */
+.tr{display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--line)}
+.tr:last-child{border-bottom:none}
+.tr-n{font-size:12px;font-weight:800;color:var(--ink-4);min-width:14px}
+.tr-body{flex:1;min-width:0}
+.tr-q{font-size:12px;font-weight:600;color:var(--ink);line-height:1.3}
+.tr-sub{font-size:10px;color:var(--ink-4)}
+.tr-right{text-align:right;flex-shrink:0}
+.tr-pct{font-size:13px;font-weight:800;color:var(--ink)}
+.tr-delta{font-size:10px;font-weight:700}
+.tr-delta.up{color:var(--accent-dk)}.tr-delta.dn{color:var(--warn)}
+
+/* ── News item (sidebar) ─────── */
+.sn{padding:8px 0;border-bottom:1px solid var(--line)}
+.sn:last-child{border-bottom:none}
+.sn-src{font-size:9px;font-weight:800;color:var(--accent-dk);text-transform:uppercase;letter-spacing:.03em;display:flex;align-items:center;gap:5px;margin-bottom:3px}
+.sn-src .time{color:var(--ink-4);font-weight:600;text-transform:none;letter-spacing:0}
+.sn-title{font-size:12px;font-weight:600;color:var(--ink);line-height:1.35;margin-bottom:3px}
+.sn-tag{font-size:9px;font-weight:700;color:var(--accent-dk);background:rgba(43,122,120,.06);padding:2px 7px;border-radius:var(--r-pill);display:inline-flex;align-items:center;gap:3px}
+
+/* ── Misc utils ─────── */
+.section-head{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:14px}
+.section-head h2{font-size:18px;font-weight:800;letter-spacing:-.02em;color:var(--ink)}
+.section-head .more{font-size:11px;font-weight:600;color:var(--blue-lt);cursor:pointer}
+.ev-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:28px}
+.page-title{font-size:22px;font-weight:800;letter-spacing:-.03em;color:var(--ink);margin-bottom:16px}
+.page-sub{font-size:13px;color:var(--ink-3);margin-top:-10px;margin-bottom:16px}
+h2.sec{font-size:16px;font-weight:700;color:var(--ink);letter-spacing:-.02em;margin-bottom:12px}
+
+.divider{height:1px;background:var(--line);margin:16px 0}
+.or{display:flex;align-items:center;gap:10px;color:var(--ink-4);font-size:12px;margin:12px 0}
+.or::before,.or::after{content:'';flex:1;height:1px;background:var(--line)}
+
+.flex{display:flex}.items-center{align-items:center}.justify-between{justify-content:space-between}
+.gap-2{gap:8px}.gap-3{gap:12px}.gap-4{gap:16px}
+.mt-1{margin-top:4px}.mt-2{margin-top:8px}.mt-3{margin-top:12px}.mt-4{margin-top:16px}.mt-6{margin-top:24px}
+.mb-2{margin-bottom:8px}.mb-3{margin-bottom:12px}.mb-4{margin-bottom:16px}
+.space-y-2>*+*{margin-top:8px}
+.space-y-3>*+*{margin-top:12px}
+.space-y-4>*+*{margin-top:16px}
+.space-y-6>*+*{margin-top:24px}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+.grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.text-center{text-align:center}
+.text-right{text-align:right}
+.text-sm{font-size:12px}.text-xs{font-size:10px}
+.font-700{font-weight:700}.font-800{font-weight:800}
+.text-muted{color:var(--ink-4)}
+.text-secondary{color:var(--ink-3)}
+.text-accent{color:var(--accent-dk)}
+.text-warn{color:var(--warn)}
+.mono{font-family:var(--mono);font-size:11px}
+.breadcrumb{font-size:11px;color:var(--ink-4);margin-bottom:14px}
+.breadcrumb a{color:var(--blue-lt)}.breadcrumb a:hover{text-decoration:underline}
+.sep{margin:0 5px}
+.w-full{width:100%}
+.live-dot{width:5px;height:5px;border-radius:50%;background:var(--warn);animation:pulse 1.2s infinite;display:inline-block}
+.range-wrap{display:flex;align-items:center;gap:12px}
+.range-val{font-size:18px;font-weight:800;color:var(--ink);min-width:42px;text-align:right}
+input[type=range]{accent-color:var(--accent);width:100%}
+
+/* Persona pills */
+.pp-premium{background:rgba(67,97,166,.08);color:var(--blue-lt)}
+.pp-free{background:var(--surface-3);color:var(--ink-3)}
+.pp-business{background:rgba(43,122,120,.1);color:var(--accent-dk)}
+
+/* Onboarding: password rules */
+.pw-rule{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:500}
+.pw-rule.ok{color:var(--accent-dk)}
+.pw-rule.fail{color:var(--ink-4)}
+.pw-rule-icon{font-size:11px;font-weight:800}
+
+/* Method selection (identity) */
+.method-opt{
+  display:flex;align-items:center;gap:14px;padding:14px 16px;
+  border:2px solid var(--line);border-radius:8px;background:var(--surface);
+  cursor:pointer;transition:all .15s;text-align:left;width:100%;
+}
+.method-opt:hover{border-color:var(--line-2)}
+.method-opt.sel{border-color:var(--accent);background:rgba(43,122,120,.03)}
+.method-icon{
+  width:40px;height:40px;border-radius:8px;background:var(--surface-3);
+  display:flex;align-items:center;justify-content:center;font-size:19px;flex-shrink:0;
+}
+.method-opt.sel .method-icon{background:var(--accent);color:#fff;font-size:18px}
+
+/* Check rows */
+.check-row{display:flex;align-items:center;justify-content:space-between;padding:11px 0;border-bottom:1px solid var(--line)}
+.check-row:last-child{border-bottom:none}
+
+/* Google btn */
+.google-btn{
+  width:100%;display:flex;align-items:center;gap:10px;padding:11px 16px;
+  border:1.5px solid var(--line);border-radius:8px;
+  font-size:13px;font-weight:600;color:var(--ink-2);
+  background:var(--surface);cursor:pointer;transition:background .15s;
+}
+.google-btn:hover{background:var(--surface-2)}
+
+/* Code block */
+.code-block{
+  background:var(--surface-2);border:1px solid var(--line);border-radius:8px;
+  padding:14px;font-family:var(--mono);font-size:12px;color:var(--ink);
+  overflow-x:auto;
+}
+
+/* API key */
+.api-key-row{
+  display:flex;align-items:center;gap:8px;
+  background:var(--surface-2);border:1.5px solid var(--line);border-radius:8px;padding:10px 14px;
+}
+.api-key-val{flex:1;font-family:var(--mono);font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.api-icon-btn{color:var(--ink-4);cursor:pointer;padding:3px;border-radius:4px;transition:color .15s}
+.api-icon-btn:hover{color:var(--blue-lt)}
+
+/* Live feed item */
+.hq-f-item{display:flex;align-items:center;gap:7px;font-size:11px;padding:4px 0}
+.hq-f-av{width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:800;flex-shrink:0}
+.hq-f-user{color:var(--ink-3);font-weight:600}
+.hq-f-val{font-weight:800}.hq-f-val.y{color:var(--accent-dk)}.hq-f-val.n{color:var(--warn)}
+.hq-f-time{color:var(--ink-4);margin-left:auto;font-size:10px}
+
+/* Log items */
+.log-item{display:flex;align-items:flex-start;gap:10px;padding:10px 18px;transition:background .1s}
+.log-item:hover{background:var(--surface-2)}
+.log-divider{height:1px;background:var(--line)}
+
+/* Stats chip (monitoring) */
+.stat-chip{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:18px;text-align:center}
+.stat-chip .val{font-size:22px;font-weight:800;letter-spacing:-.03em;line-height:1}
+.stat-chip .lbl{font-size:11px;color:var(--ink-4);margin-top:4px}
+
+/* Gate (locked) */
+.gate-card{
+  background:rgba(35,54,112,.03);border:1.5px solid rgba(35,54,112,.1);
+  border-radius:var(--r);padding:22px;display:flex;align-items:center;gap:16px;
+}
+
+/* CTA bar (footer) */
+.cta-bar{
+  background:var(--ink);border-radius:var(--r);padding:28px 32px;
+  display:flex;align-items:center;justify-content:space-between;margin-bottom:0;
+}
+.cta-bar h3{font-size:19px;font-weight:800;color:#fff;letter-spacing:-.02em;margin-bottom:3px}
+.cta-bar p{font-size:12px;color:rgba(255,255,255,.45)}
+
+/* Tab toggle */
+.tab-wrap{display:flex;background:var(--surface-3);border-radius:8px;padding:3px;margin-bottom:22px}
+.tab-btn{flex:1;padding:8px;border-radius:6px;font-size:12px;font-weight:700;text-align:center;cursor:pointer;transition:all .15s;color:var(--ink-4)}
+.tab-btn.active{background:var(--surface);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.08)}
+
+/* Challenge card */
+.challenge{
+  border:1.5px solid var(--accent);border-radius:var(--r);
+  padding:20px;margin-bottom:24px;background:var(--surface);
+  position:relative;overflow:hidden;
+}
+.challenge::after{content:'🏆';position:absolute;top:-8px;right:-8px;font-size:64px;opacity:.04;pointer-events:none}
+.ch-badge{
+  display:inline-flex;align-items:center;gap:4px;background:var(--accent);color:#fff;
+  font-size:9px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;
+  padding:3px 10px;border-radius:5px;margin-bottom:10px;
+}
+.ch-badge .d{width:4px;height:4px;border-radius:50%;background:#fff;animation:pulse 1.4s infinite}
+
+/* Cat filter pill */
+.cat-pill{
+  padding:6px 12px;border-radius:var(--r-pill);font-size:12px;font-weight:600;
+  border:1.5px solid var(--line);color:var(--ink-3);cursor:pointer;transition:all .15s;
+}
+.cat-pill:hover{border-color:var(--line-2);background:var(--surface-2)}
+.cat-pill.active{background:var(--ink);color:#fff;border-color:var(--ink)}
+
+/* Range labels */
+.range-labels{display:flex;justify-content:space-between;font-size:10px;color:var(--ink-4);margin-top:3px}
+/* Sim results */
+.sim-card{border-radius:var(--r);padding:16px;text-align:center}
+.sim-label{font-size:11px;color:var(--ink-4);margin-bottom:4px}
+.sim-val{font-size:26px;font-weight:800;letter-spacing:-.04em}
+
+/* Course card */
+.course-card{
+  background:var(--surface);border:1px solid var(--line);border-radius:var(--r);
+  padding:18px;cursor:pointer;transition:all .2s;
+}
+.course-card:hover{box-shadow:var(--shadow-hover)}
+
+/* Admin badge level */
+.pv-level{font-size:9px;font-weight:700;padding:2px 6px;border-radius:3px}
+.pv-level.elite{background:#FEF3C7;color:#92400E}
+.pv-level.expert{background:var(--surface-3);color:var(--blue)}
+
+</style>
+</head>
+<body>
+
+<div id="shell">
+  <!-- ══════ LEFT NAV PANEL ══════ -->
+  <div id="nav-panel">
+    <div class="np-logo">
+      <div class="wordmark"><span class="i">i</span><span class="t">PYSY</span></div>
+      <div class="sub">Mockup Navigator · v2</div>
+    </div>
+
+    <div class="np-section">Onboarding (B0)</div>
+    <div class="np-item active" onclick="show('B0-01')"><span class="pip"></span>B0-01 Login / Signup</div>
+    <div class="np-item" onclick="show('B0-02')"><span class="pip"></span>B0-02 E-mail</div>
+    <div class="np-item" onclick="show('B0-03')"><span class="pip"></span>B0-03 Senha</div>
+    <div class="np-item" onclick="show('B0-04')"><span class="pip"></span>B0-04 Verificação OTP</div>
+    <div class="np-item" onclick="show('B0-05')"><span class="pip"></span>B0-05 Nome completo</div>
+    <div class="np-item" onclick="show('B0-06')"><span class="pip"></span>B0-06 Nascimento</div>
+    <div class="np-item" onclick="show('B0-07')"><span class="pip"></span>B0-07 Endereço</div>
+    <div class="np-item" onclick="show('B0-08')"><span class="pip"></span>B0-08 Identidade</div>
+    <div class="np-item" onclick="show('B0-09')"><span class="pip"></span>B0-09 Em análise</div>
+    <div class="np-item" onclick="show('B0-10')"><span class="pip"></span>B0-10 Conta duplicada</div>
+
+    <div class="np-section">Público (B1)</div>
+    <div class="np-item" onclick="show('B1-01')"><span class="pip"></span>B1-01 HomePage</div>
+    <div class="np-item" onclick="show('B1-02')"><span class="pip"></span>B1-02 Lista de Eventos</div>
+    <div class="np-item" onclick="show('B1-03')"><span class="pip"></span>B1-03 Detalhe Evento</div>
+
+    <div class="np-section">Free (B2)</div>
+    <div class="np-item" onclick="show('B2-01')"><span class="pip"></span>B2-01 Boas-vindas</div>
+    <div class="np-item" onclick="show('B2-02')"><span class="pip"></span>B2-02 Dashboard Free</div>
+    <div class="np-item" onclick="show('B2-03')"><span class="pip"></span>B2-03 Rankings</div>
+    <div class="np-item" onclick="show('B2-04')"><span class="pip"></span>B2-04 Perfil Free</div>
+
+    <div class="np-section">Premium (B3)</div>
+    <div class="np-item" onclick="show('B3-01')"><span class="pip"></span>B3-01 Dashboard</div>
+    <div class="np-item" onclick="show('B3-02')"><span class="pip"></span>B3-02 Detalhe + Previsão</div>
+    <div class="np-item" onclick="show('B3-03')"><span class="pip"></span>B3-03 Filtros</div>
+    <div class="np-item" onclick="show('B3-04')"><span class="pip"></span>B3-04 Simulações</div>
+    <div class="np-item" onclick="show('B3-05')"><span class="pip"></span>B3-05 Perfil Premium</div>
+
+    <div class="np-section">Business (B4)</div>
+    <div class="np-item" onclick="show('B4-01')"><span class="pip"></span>B4-01 Dashboard</div>
+    <div class="np-item" onclick="show('B4-02')"><span class="pip"></span>B4-02 Criar Evento</div>
+    <div class="np-item" onclick="show('B4-03')"><span class="pip"></span>B4-03 Editor Insight</div>
+    <div class="np-item" onclick="show('B4-04')"><span class="pip"></span>B4-04 API</div>
+    <div class="np-item" onclick="show('B4-05')"><span class="pip"></span>B4-05 Times</div>
+
+    <div class="np-section">Academia (B5)</div>
+    <div class="np-item" onclick="show('B5-01')"><span class="pip"></span>B5-01 Academia IP</div>
+    <div class="np-item" onclick="show('B5-02')"><span class="pip"></span>B5-02 Glossário</div>
+
+    <div class="np-section">Social (B6)</div>
+    <div class="np-item" onclick="show('B6-01')"><span class="pip"></span>B6-01 Feed</div>
+    <div class="np-item" onclick="show('B6-02')"><span class="pip"></span>B6-02 Comentários</div>
+    <div class="np-item" onclick="show('B6-03')"><span class="pip"></span>B6-03 Perfil Previsor</div>
+
+    <div class="np-section">Admin (B7)</div>
+    <div class="np-item" onclick="show('B7-01')"><span class="pip"></span>B7-01 Dashboard Admin</div>
+    <div class="np-item" onclick="show('B7-02')"><span class="pip"></span>B7-02 Editorial</div>
+    <div class="np-item" onclick="show('B7-03')"><span class="pip"></span>B7-03 Usuários / LGPD</div>
+    <div class="np-item" onclick="show('B7-04')"><span class="pip"></span>B7-04 Monitoramento</div>
+  </div>
+
+  <!-- ══════ SCREENS ══════ -->
+  <div id="content">
+
+    <!-- ████████ B0-01 Login / Signup ████████ -->
+    <div id="B0-01" class="screen active">
+      <div class="ob-wrap">
+        <div class="ob-header"><div class="logo"><span class="i">i</span><span class="t">PYSY</span></div></div>
+        <div class="ob-body">
+          <div class="ob-card">
+            <div class="tab-wrap">
+              <div class="tab-btn active">Criar conta</div>
+              <div class="tab-btn">Já tenho conta</div>
+            </div>
+            <h1 style="font-size:24px;font-weight:800;letter-spacing:-.03em;color:var(--ink);margin-bottom:5px">Bem-vindo ao iPYSY</h1>
+            <p style="font-size:13px;color:var(--ink-3);margin-bottom:22px;line-height:1.55">Inteligência coletiva calibrada para decisões de alto impacto.</p>
+            <div class="space-y-3">
+              <button class="google-btn">
+                <svg width="20" height="20" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+                Continuar com Google
+              </button>
+              <div class="or">ou</div>
+              <button class="btn-continue on">Cadastrar com e-mail</button>
+            </div>
+            <p style="font-size:11px;color:var(--ink-4);text-align:center;margin-top:18px;line-height:1.6">Ao continuar, você concorda com os <span style="color:var(--blue-lt);cursor:pointer">Termos de Uso</span> e a <span style="color:var(--blue-lt);cursor:pointer">Política de Privacidade</span>.</p>
+          </div>
+        </div>
+        <div class="ob-footer-txt">© 2026 iPYSY · Intelligence for Decisions</div>
+      </div>
+    </div>
+
+    <!-- ████████ B0-02 Email ████████ -->
+    <div id="B0-02" class="screen">
+      <div class="ob-wrap">
+        <div class="ob-header"><div class="logo"><span class="i">i</span><span class="t">PYSY</span></div></div>
+        <div class="ob-progress-bar"><div class="ob-progress-wrap"><div class="ob-bars"><div class="ob-bar cur"></div><div class="ob-bar todo"></div><div class="ob-bar todo"></div></div><div class="ob-bar-labels"><span class="cur">Credenciais</span><span class="todo">Dados Pessoais</span><span class="todo">Identidade</span></div></div></div>
+        <div class="ob-body">
+          <div class="ob-card space-y-6">
+            <div><h1 style="font-size:22px;font-weight:800;letter-spacing:-.03em;color:var(--ink)">Qual é o seu e-mail?</h1><p style="font-size:13px;color:var(--ink-3);margin-top:4px">Use um e-mail que você acessa regularmente.</p></div>
+            <div class="field"><input class="inp" type="email" placeholder="voce@exemplo.com" /></div>
+            <button class="btn-continue off" aria-disabled="true">Continuar</button>
+            <p style="text-align:center;font-size:12px"><span style="color:var(--blue-lt);cursor:pointer">Já tenho conta — entrar</span></p>
+          </div>
+        </div>
+        <div class="ob-footer-txt">© 2026 iPYSY</div>
+      </div>
+    </div>
+
+    <!-- ████████ B0-03 Senha ████████ -->
+    <div id="B0-03" class="screen">
+      <div class="ob-wrap">
+        <div class="ob-header"><div class="logo"><span class="i">i</span><span class="t">PYSY</span></div></div>
+        <div class="ob-progress-bar"><div class="ob-progress-wrap"><div class="ob-bars"><div class="ob-bar cur"></div><div class="ob-bar todo"></div><div class="ob-bar todo"></div></div><div class="ob-bar-labels"><span class="cur">Credenciais</span><span class="todo">Dados Pessoais</span><span class="todo">Identidade</span></div></div></div>
+        <div class="ob-body">
+          <div class="ob-card space-y-6">
+            <div><h1 style="font-size:22px;font-weight:800;letter-spacing:-.03em;color:var(--ink)">Crie sua senha</h1><p style="font-size:13px;color:var(--ink-3);margin-top:4px">Escolha uma senha forte para proteger sua conta.</p></div>
+            <div class="field">
+              <div style="position:relative">
+                <input class="inp" type="password" value="MinhaS3nha!" placeholder="••••••••" />
+                <span style="position:absolute;right:12px;top:50%;transform:translateY(-50%);cursor:pointer;font-size:13px;color:var(--ink-4)">👁</span>
+              </div>
+              <div style="margin-top:8px" class="space-y-2">
+                <div class="pw-rule ok"><span class="pw-rule-icon">✓</span> Mínimo 8 caracteres</div>
+                <div class="pw-rule ok"><span class="pw-rule-icon">✓</span> Uma letra maiúscula</div>
+                <div class="pw-rule ok"><span class="pw-rule-icon">✓</span> Um número</div>
+              </div>
+            </div>
+            <button class="btn-continue on">Continuar</button>
+          </div>
+        </div>
+        <div class="ob-footer-txt">© 2026 iPYSY</div>
+      </div>
+    </div>
+
+    <!-- ████████ B0-04 OTP ████████ -->
+    <div id="B0-04" class="screen">
+      <div class="ob-wrap">
+        <div class="ob-header"><div class="logo"><span class="i">i</span><span class="t">PYSY</span></div></div>
+        <div class="ob-progress-bar"><div class="ob-progress-wrap"><div class="ob-bars"><div class="ob-bar cur"></div><div class="ob-bar todo"></div><div class="ob-bar todo"></div></div><div class="ob-bar-labels"><span class="cur">Credenciais</span><span class="todo">Dados Pessoais</span><span class="todo">Identidade</span></div></div></div>
+        <div class="ob-body">
+          <div class="ob-card space-y-6">
+            <div style="text-align:center">
+              <div style="width:52px;height:52px;border-radius:50%;background:rgba(43,122,120,.08);display:flex;align-items:center;justify-content:center;margin:0 auto 14px;font-size:22px">📧</div>
+              <h1 style="font-size:22px;font-weight:800;letter-spacing:-.03em;color:var(--ink)">Código de verificação</h1>
+              <p style="font-size:13px;color:var(--ink-3);margin-top:4px">Enviamos um código de 4 dígitos para o seu e-mail.</p>
+            </div>
+            <div class="otp-wrap">
+              <input class="otp-box filled" type="text" maxlength="1" value="7" />
+              <input class="otp-box filled" type="text" maxlength="1" value="4" />
+              <input class="otp-box" type="text" maxlength="1" placeholder="·" style="border-color:var(--blue-lt)" />
+              <input class="otp-box" type="text" maxlength="1" placeholder="·" />
+            </div>
+            <button class="btn-continue off" aria-disabled="true">Continuar</button>
+            <div style="text-align:center;font-size:12px;color:var(--blue-lt);cursor:pointer;font-weight:600">Reenviar código</div>
+          </div>
+        </div>
+        <div class="ob-footer-txt">© 2026 iPYSY</div>
+      </div>
+    </div>
+
+    <!-- ████████ B0-05 Nome ████████ -->
+    <div id="B0-05" class="screen">
+      <div class="ob-wrap">
+        <div class="ob-header"><div class="logo"><span class="i">i</span><span class="t">PYSY</span></div></div>
+        <div class="ob-progress-bar"><div class="ob-progress-wrap"><div class="ob-bars"><div class="ob-bar done"></div><div class="ob-bar cur"></div><div class="ob-bar todo"></div></div><div class="ob-bar-labels"><span class="done">Credenciais</span><span class="cur">Dados Pessoais</span><span class="todo">Identidade</span></div></div></div>
+        <div class="ob-body">
+          <div class="ob-card space-y-6">
+            <div><h1 style="font-size:22px;font-weight:800;letter-spacing:-.03em;color:var(--ink)">Qual é o seu nome?</h1><p style="font-size:13px;color:var(--ink-3);margin-top:4px">Use seu nome completo — ele não é exibido publicamente.</p></div>
+            <div class="field"><input class="inp" type="text" placeholder="Ana Beatriz" value="Ana Beatriz" /></div>
+            <button class="btn-continue on">Continuar</button>
+          </div>
+        </div>
+        <div class="ob-footer-txt">© 2026 iPYSY</div>
+      </div>
+    </div>
+
+    <!-- ████████ B0-06 Nascimento ████████ -->
+    <div id="B0-06" class="screen">
+      <div class="ob-wrap">
+        <div class="ob-header"><div class="logo"><span class="i">i</span><span class="t">PYSY</span></div></div>
+        <div class="ob-progress-bar"><div class="ob-progress-wrap"><div class="ob-bars"><div class="ob-bar done"></div><div class="ob-bar cur"></div><div class="ob-bar todo"></div></div><div class="ob-bar-labels"><span class="done">Credenciais</span><span class="cur">Dados Pessoais</span><span class="todo">Identidade</span></div></div></div>
+        <div class="ob-body">
+          <div class="ob-card space-y-6">
+            <div><h1 style="font-size:22px;font-weight:800;letter-spacing:-.03em;color:var(--ink)">Qual é a sua data de nascimento?</h1><p style="font-size:13px;color:var(--ink-3);margin-top:4px">Necessária para verificar sua elegibilidade. Mínimo 18 anos.</p></div>
+            <div class="field"><input class="inp" type="date" value="1990-06-15" /></div>
+            <button class="btn-continue on">Continuar</button>
+          </div>
+        </div>
+        <div class="ob-footer-txt">© 2026 iPYSY</div>
+      </div>
+    </div>
+
+    <!-- ████████ B0-07 Endereço ████████ -->
+    <div id="B0-07" class="screen">
+      <div class="ob-wrap">
+        <div class="ob-header"><div class="logo"><span class="i">i</span><span class="t">PYSY</span></div></div>
+        <div class="ob-progress-bar"><div class="ob-progress-wrap"><div class="ob-bars"><div class="ob-bar done"></div><div class="ob-bar cur"></div><div class="ob-bar todo"></div></div><div class="ob-bar-labels"><span class="done">Credenciais</span><span class="cur">Dados Pessoais</span><span class="todo">Identidade</span></div></div></div>
+        <div class="ob-body">
+          <div class="ob-card space-y-4">
+            <div><h1 style="font-size:22px;font-weight:800;letter-spacing:-.03em;color:var(--ink)">Qual é o seu endereço?</h1><p style="font-size:13px;color:var(--ink-3);margin-top:4px">Usado apenas para verificação. Nunca exibido publicamente.</p></div>
+            <div class="field"><label>CEP</label><input class="inp" placeholder="00000-000" value="30140-110" /></div>
+            <div class="grid-2">
+              <div class="field"><label>Cidade</label><input class="inp" placeholder="São Paulo" value="Belo Horizonte" /></div>
+              <div class="field"><label>Estado</label><select class="inp"><option>MG</option><option>SP</option><option>RJ</option></select></div>
+            </div>
+            <button class="btn-continue on">Continuar</button>
+          </div>
+        </div>
+        <div class="ob-footer-txt">© 2026 iPYSY</div>
+      </div>
+    </div>
+
+    <!-- ████████ B0-08 Identidade ████████ -->
+    <div id="B0-08" class="screen">
+      <div class="ob-wrap">
+        <div class="ob-header"><div class="logo"><span class="i">i</span><span class="t">PYSY</span></div></div>
+        <div class="ob-progress-bar"><div class="ob-progress-wrap"><div class="ob-bars"><div class="ob-bar done"></div><div class="ob-bar done"></div><div class="ob-bar cur"></div></div><div class="ob-bar-labels"><span class="done">Credenciais</span><span class="done">Dados Pessoais</span><span class="cur">Identidade</span></div></div></div>
+        <div class="ob-body">
+          <div class="ob-card space-y-6">
+            <div><h1 style="font-size:22px;font-weight:800;letter-spacing:-.03em;color:var(--ink)">Verificação de identidade</h1><p style="font-size:13px;color:var(--ink-3);margin-top:4px;line-height:1.55">Para garantir a integridade das previsões, precisamos verificar sua identidade.</p></div>
+            <div class="space-y-3">
+              <button class="method-opt sel">
+                <div class="method-icon" style="background:var(--accent);color:#fff">📱</div>
+                <div><p style="font-size:13px;font-weight:700;color:var(--ink)">Pelo celular (SMS)</p><p style="font-size:11px;color:var(--ink-3);margin-top:2px">Receba um link por SMS</p></div>
+              </button>
+              <button class="method-opt">
+                <div class="method-icon">📷</div>
+                <div><p style="font-size:13px;font-weight:700;color:var(--ink)">QR Code</p><p style="font-size:11px;color:var(--ink-3);margin-top:2px">Escaneie com seu celular</p></div>
+              </button>
+            </div>
+            <button class="btn-continue on">Iniciar verificação</button>
+            <p style="text-align:center;font-size:12px;color:var(--ink-4);cursor:pointer">Fazer isso depois</p>
+          </div>
+        </div>
+        <div class="ob-footer-txt">© 2026 iPYSY</div>
+      </div>
+    </div>
+
+    <!-- ████████ B0-09 Em Análise ████████ -->
+    <div id="B0-09" class="screen">
+      <div class="ob-wrap">
+        <div class="ob-header"><div class="logo"><span class="i">i</span><span class="t">PYSY</span></div></div>
+        <div class="ob-progress-bar"><div class="ob-progress-wrap"><div class="ob-bars"><div class="ob-bar done"></div><div class="ob-bar done"></div><div class="ob-bar cur"></div></div><div class="ob-bar-labels"><span class="done">Credenciais</span><span class="done">Dados Pessoais</span><span class="cur">Identidade</span></div></div></div>
+        <div class="ob-body">
+          <div class="ob-card space-y-6" style="text-align:center">
+            <div style="width:60px;height:60px;border-radius:50%;background:rgba(43,122,120,.08);display:flex;align-items:center;justify-content:center;margin:0 auto;font-size:26px">⏳</div>
+            <div><h1 style="font-size:22px;font-weight:800;letter-spacing:-.03em;color:var(--ink)">Cadastro em análise</h1><p style="font-size:13px;color:var(--ink-3);margin-top:6px;line-height:1.55">Estamos verificando suas informações. O processo leva <strong style="color:var(--ink)">em até 24 horas</strong>.</p></div>
+            <div class="card">
+              <div class="check-row"><span style="font-size:13px;color:var(--ink-2)">Credenciais</span><span class="badge badge-green">Verificado</span></div>
+              <div class="check-row"><span style="font-size:13px;color:var(--ink-2)">Dados pessoais</span><span class="badge badge-green">Verificado</span></div>
+              <div class="check-row"><span style="font-size:13px;color:var(--ink-2)">Identidade</span><span class="badge badge-yellow">Em análise</span></div>
+            </div>
+            <p style="font-size:11px;color:var(--ink-4)">Você receberá uma notificação por e-mail quando a análise for concluída.</p>
+            <button class="btn-continue on">Explorar mercados enquanto isso</button>
+          </div>
+        </div>
+        <div class="ob-footer-txt">© 2026 iPYSY</div>
+      </div>
+    </div>
+
+    <!-- ████████ B0-10 Conta duplicada ████████ -->
+    <div id="B0-10" class="screen">
+      <div class="ob-wrap">
+        <div class="ob-header"><div class="logo"><span class="i">i</span><span class="t">PYSY</span></div></div>
+        <div class="ob-body">
+          <div class="ob-card space-y-6" style="text-align:center">
+            <div style="width:60px;height:60px;border-radius:50%;background:#FFFBEB;display:flex;align-items:center;justify-content:center;margin:0 auto;font-size:26px">⚠️</div>
+            <div><h1 style="font-size:22px;font-weight:800;letter-spacing:-.03em;color:var(--ink)">Conta já existente</h1><p style="font-size:13px;color:var(--ink-3);margin-top:6px;line-height:1.55">Identificamos que já existe uma conta associada a esses dados. Por segurança, não podemos fornecer mais detalhes.</p></div>
+            <div class="space-y-3">
+              <button class="btn-continue on">Entrar na minha conta</button>
+              <button class="btn-continue" style="background:var(--surface);border:1.5px solid var(--line);color:var(--ink-2);width:100%;padding:12px;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer">Esqueci minha senha</button>
+            </div>
+            <p style="font-size:11px;color:var(--ink-4)">Se acredita que isso é um erro, entre em contato com <span style="color:var(--blue-lt);cursor:pointer">suporte@ipysy.com</span></p>
+          </div>
+        </div>
+        <div class="ob-footer-txt">© 2026 iPYSY</div>
+      </div>
+    </div>
+
+    <!-- ████████ B1-01 HomePage ████████ -->
+    <div id="B1-01" class="screen">
+      <div class="screen-scroll">
+        <div class="topnav"><div class="nav-in">
+          <div class="n-logo"><span class="i">i</span><span class="t">PYSY</span></div>
+          <div class="n-links"><div class="n-link active">Explorar</div><div class="n-link">Mercados</div><div class="n-link">Ranking</div><div class="n-link">Academia</div></div>
+          <div class="n-right">
+            <div class="n-search"><svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg><span>Buscar previsão...</span></div>
+            <button class="n-btn-ghost">Entrar</button>
+            <button class="n-btn-accent">Comece grátis</button>
+          </div>
+        </div></div>
+        <div class="ticker"><div class="ticker-tag"><span class="ticker-dot"></span>AO VIVO</div><div class="ticker-track"><div class="ticker-scroll"><span><span class="src">Folha</span> Copom sinaliza manutenção da Selic em março</span><span class="sep">·</span><span><strong>analista.vital</strong> previu Selic abaixo de 10% — <strong style="color:var(--accent-dk)">Sim 45%</strong></span><span class="sep">·</span><span><span class="src">Reuters</span> Bitcoin ultrapassa US$ 94 mil e renova máxima</span><span class="sep">·</span><span><strong>Consenso</strong> Petrobras dividendos — <strong style="color:var(--accent-dk)">▲ +22pp</strong></span><span class="sep">·</span><span><span class="src">Valor</span> Petrobras anuncia dividendos extras de R$ 5,2 bi</span><span class="sep">·</span><span><span class="src">Folha</span> Copom sinaliza manutenção da Selic em março</span><span class="sep">·</span><span><strong>analista.vital</strong> previu Selic abaixo de 10% — <strong style="color:var(--accent-dk)">Sim 45%</strong></span><span class="sep">·</span><span><span class="src">Reuters</span> Bitcoin ultrapassa US$ 94 mil</span><span class="sep">·</span><span><strong>Consenso</strong> Ibovespa 150k — <strong style="color:var(--accent-dk)">▲ +3pp</strong></span></div></div></div>
+        <div class="catbar"><div class="catbar-in"><div class="cat-t active">🔥 Em alta</div><div class="cat-t">Economia <span class="cnt">18</span></div><div class="cat-t">Política <span class="cnt">12</span></div><div class="cat-t">Cultura <span class="cnt">8</span></div><div class="cat-t">Esportes <span class="cnt">14</span></div><div class="cat-t">Tecnologia <span class="cnt">6</span></div><div class="cat-t">Eleições 2026</div><div class="cat-t">Encerra em breve</div></div></div>
+        <!-- Hero -->
+        <section style="border-bottom:1px solid var(--line);padding:32px 24px 28px;background:var(--surface)">
+          <div style="max-width:var(--w);margin:0 auto;display:grid;grid-template-columns:1fr 400px;gap:36px;align-items:start">
+            <div>
+              <div style="font-size:11px;font-weight:800;color:var(--accent-dk);text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px;display:flex;align-items:center;gap:6px"><span style="width:6px;height:6px;border-radius:50%;background:var(--accent);animation:pulse 1.6s infinite;display:inline-block"></span>3.247 previsões feitas hoje</div>
+              <h1 style="font-size:38px;font-weight:800;letter-spacing:-.035em;color:var(--ink);line-height:1.1;margin-bottom:12px">O que o Brasil <em style="font-style:normal;color:var(--accent-dk)">realmente</em> espera do futuro?</h1>
+              <p style="font-size:15px;color:var(--ink-3);line-height:1.65;margin-bottom:22px;max-width:520px">Inteligência preditiva colaborativa. Faça previsões, construa reputação verificável e descubra o consenso de milhares de analistas.</p>
+              <div style="display:flex;gap:10px;margin-bottom:26px">
+                <button class="btn btn-accent" style="font-size:13px;padding:11px 26px">Comece grátis →</button>
+                <button class="btn btn-ghost" style="font-size:13px;padding:11px 22px">Como funciona?</button>
+              </div>
+              <div style="display:flex;gap:28px;padding-top:18px;border-top:1px solid var(--line)">
+                <div><div style="font-size:20px;font-weight:800;color:var(--ink);line-height:1">12.847</div><div style="font-size:10px;color:var(--ink-4);margin-top:3px">Previsores ativos</div></div>
+                <div><div style="font-size:20px;font-weight:800;color:var(--ink);line-height:1">342</div><div style="font-size:10px;color:var(--ink-4);margin-top:3px">Eventos abertos</div></div>
+                <div><div style="font-size:20px;font-weight:800;color:var(--ink);line-height:1">89%</div><div style="font-size:10px;color:var(--ink-4);margin-top:3px">Acurácia do consenso</div></div>
+              </div>
+            </div>
+            <!-- Hero question card -->
+            <div style="border:1.5px solid var(--line);border-radius:var(--r);padding:22px;background:var(--surface)">
+              <div style="font-size:10px;font-weight:800;color:var(--ink-4);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;display:flex;align-items:center;gap:8px"><span>Pergunta em alta</span><span style="color:var(--warn);display:flex;align-items:center;gap:4px;font-size:10px"><span class="live-dot"></span>Ao vivo</span><span style="margin-left:auto">1.842 previsores</span></div>
+              <div style="font-size:18px;font-weight:700;color:var(--ink);line-height:1.28;margin-bottom:14px;letter-spacing:-.01em">A Selic estará abaixo de 10% ao final de 2026?</div>
+              <div class="ev-dual" style="margin-bottom:12px">
+                <div class="ev-dual-item gen"><div class="ev-dual-label">Consenso geral</div><div class="ev-dual-val">48%</div><div class="ev-dual-sub">1.842 previsores</div></div>
+                <div class="ev-dual-item cal"><div class="ev-dual-label">🎯 Calibrado</div><div class="ev-dual-val">44%</div><div class="ev-dual-sub">Top 150 previsores</div></div>
+              </div>
+              <div style="display:flex;justify-content:space-between;font-size:12px;font-weight:700;margin-bottom:4px"><span style="color:var(--accent-dk)">48% Sim</span><span style="color:var(--warn)">52% Não</span></div>
+              <div style="height:8px;border-radius:99px;background:var(--warn-bg);overflow:hidden;margin-bottom:14px"><div style="height:100%;border-radius:99px;width:48%;background:linear-gradient(90deg,var(--accent),#34D89E)"></div></div>
+              <button style="width:100%;padding:10px;border-radius:8px;background:var(--blue);color:#fff;font-size:13px;font-weight:700;border:none;cursor:pointer;margin-bottom:12px;transition:background .15s" onmouseover="this.style.background='var(--ink)'" onmouseout="this.style.background='var(--blue)'">Fazer minha previsão →</button>
+              <div style="font-size:11px;color:var(--ink-4);display:flex;flex-wrap:wrap;gap:10px;margin-bottom:12px"><span>📅 Resolve: 31 dez 2026</span><span>📊 341.870 prev.</span><span>📈 ▲ +3pp esta semana</span></div>
+              <div style="border-top:1px solid var(--line);padding-top:10px">
+                <div style="font-size:9px;font-weight:800;color:var(--ink-4);text-transform:uppercase;letter-spacing:.1em;margin-bottom:5px">Previsões recentes</div>
+                <div class="hq-f-item"><div class="hq-f-av" style="background:#FEE2E2;color:#991B1B">AV</div><span class="hq-f-user">analista.vital</span><span class="hq-f-val y">Sim 45%</span><span class="hq-f-time">3min</span></div>
+                <div class="hq-f-item"><div class="hq-f-av" style="background:#DBEAFE;color:#1E40AF">ML</div><span class="hq-f-user">macrolivre</span><span class="hq-f-val n">Não 60%</span><span class="hq-f-time">8min</span></div>
+                <div class="hq-f-item"><div class="hq-f-av" style="background:#D1FAE5;color:#065F46">FP</div><span class="hq-f-user">futuro.prob</span><span class="hq-f-val y">Sim 52%</span><span class="hq-f-time">12min</span></div>
+              </div>
+            </div>
+          </div>
+        </section>
+        <!-- Main content -->
+        <div style="max-width:var(--w);margin:0 auto;padding:26px 24px 40px;display:grid;grid-template-columns:1fr 300px;gap:28px;align-items:start">
+          <div>
+            <div class="challenge">
+              <div class="ch-badge"><span class="d"></span>Desafio ativo</div>
+              <div style="font-size:17px;font-weight:800;letter-spacing:-.02em;color:var(--ink);margin-bottom:4px">Desafio de Acurácia — Economia Q1 2026</div>
+              <div style="font-size:12px;color:var(--ink-3);margin-bottom:12px;line-height:1.5">Preveja 10 eventos econômicos que resolvem até março. Os mais calibrados conquistam o Selo iPYSY.</div>
+              <div style="display:flex;gap:20px;margin-bottom:12px">
+                <div><div style="font-size:17px;font-weight:800;color:var(--ink);line-height:1">847</div><div style="font-size:9px;color:var(--ink-4);margin-top:2px">participantes</div></div>
+                <div><div style="font-size:17px;font-weight:800;color:var(--ink);line-height:1">10</div><div style="font-size:9px;color:var(--ink-4);margin-top:2px">eventos</div></div>
+                <div><div style="font-size:17px;font-weight:800;color:var(--ink);line-height:1">6</div><div style="font-size:9px;color:var(--ink-4);margin-top:2px">resolvidos</div></div>
+              </div>
+              <div style="display:flex;align-items:center;gap:12px"><button class="btn btn-primary" style="font-size:12px;padding:8px 18px">Participar →</button><span style="font-size:11px;color:var(--ink-4)">⏳ Encerra em 17 dias</span></div>
+            </div>
+            <div class="section-head"><h2>Economia</h2><span class="more">Ver todos →</span></div>
+            <div class="ev-grid">
+              <div class="ev">
+                <div class="ev-top">₿ Economia<span class="ev-date">31 dez 2026</span></div>
+                <div class="ev-title">Bitcoin acima de R$ 500.000 em 2026?</div>
+                <div class="ev-spark"><div class="b" style="height:40%"></div><div class="b" style="height:45%"></div><div class="b" style="height:50%"></div><div class="b" style="height:55%"></div><div class="b" style="height:52%"></div><div class="b" style="height:58%"></div><div class="b" style="height:60%"></div><div class="b" style="height:61%"></div></div>
+                <div class="ev-bar-row"><span class="y">61% Sim</span><span class="n">39% Não</span></div>
+                <div class="ev-track"><div class="ev-fill" style="width:61%"></div></div>
+                <div class="ev-foot"><span>📊 1.204</span><span class="trend up">▲ +8pp</span></div>
+                <div class="ev-news-badge"><span class="d"></span>Reuters: Bitcoin renova máxima · 45min</div>
+              </div>
+              <div class="ev">
+                <div class="ev-top">💰 Economia<span class="ev-date">31 dez 2026</span></div>
+                <div class="ev-title">Selic abaixo de 10% ao final de 2026?</div>
+                <div class="ev-spark"><div class="b" style="height:55%"></div><div class="b" style="height:52%"></div><div class="b" style="height:50%"></div><div class="b" style="height:48%"></div><div class="b" style="height:49%"></div><div class="b" style="height:47%"></div><div class="b" style="height:50%"></div><div class="b" style="height:48%"></div></div>
+                <div class="ev-bar-row"><span class="y">48% Sim</span><span class="n">52% Não</span></div>
+                <div class="ev-track"><div class="ev-fill" style="width:48%"></div></div>
+                <div class="ev-foot"><span>📊 341</span><span class="trend dn">▼ -2pp</span></div>
+                <div class="ev-news-badge"><span class="d"></span>Folha: Copom sinaliza manutenção · 2h</div>
+              </div>
+              <div class="ev">
+                <div class="ev-top">📊 Economia<span class="ev-date">31 dez 2026</span></div>
+                <div class="ev-title">Ibovespa acima de 150.000 pontos?</div>
+                <div class="ev-bar-row"><span class="y">54% Sim</span><span class="n">46% Não</span></div>
+                <div class="ev-track"><div class="ev-fill" style="width:54%"></div></div>
+                <div class="ev-foot"><span>📊 678</span><span class="trend up">▲ +3pp</span></div>
+              </div>
+              <div class="ev">
+                <div class="ev-top">🏛️ Política<span class="ev-date">31 dez 2026</span></div>
+                <div class="ev-title">Reforma tributária aprovada integralmente?</div>
+                <div class="ev-bar-row"><span class="y">65% Sim</span><span class="n">35% Não</span></div>
+                <div class="ev-track"><div class="ev-fill" style="width:65%"></div></div>
+                <div class="ev-foot"><span>📊 187</span><span class="trend up">▲ +5pp</span></div>
+              </div>
+            </div>
+            <div class="section-head"><h2>Eleições 2026</h2><span class="more">Ver todos →</span></div>
+            <div class="ev-grid">
+              <div class="ev" style="grid-column:1/-1;background:var(--surface-2);border-color:var(--line-2)">
+                <div class="ev-top">🗳️ Eleições 2026<span class="ev-date">Out 2026</span></div>
+                <div class="ev-title" style="font-size:17px">Quem será o próximo presidente do Brasil?</div>
+                <div class="ev-dual" style="margin-bottom:12px">
+                  <div class="ev-dual-item gen"><div class="ev-dual-label">Consenso geral</div><div class="ev-dual-val">62%</div><div class="ev-dual-sub">Lula · 2.891 previsores</div></div>
+                  <div class="ev-dual-item cal"><div class="ev-dual-label">🎯 Calibrado</div><div class="ev-dual-val">58%</div><div class="ev-dual-sub">Top 200 previsores</div></div>
+                </div>
+                <div class="ev-opts">
+                  <div class="ev-opt"><span style="font-size:15px">🔴</span><span class="nm">Lula (PT)</span><div class="bar"><div class="bar-f" style="width:62%"></div></div><span class="pct">62%</span></div>
+                  <div class="ev-opt"><span style="font-size:15px">🔵</span><span class="nm">Bolsonaro (PL)</span><div class="bar"><div class="bar-f" style="width:28%"></div></div><span class="pct">28%</span></div>
+                  <div class="ev-opt"><span style="font-size:15px">⚪</span><span class="nm">Terceiro candidato</span><div class="bar"><div class="bar-f" style="width:10%"></div></div><span class="pct">10%</span></div>
+                </div>
+                <div class="ev-foot"><span>📊 2.891 previsores</span><span class="trend up">▲ Lula +4pp</span><span style="margin-left:auto">Encerra em 8 meses</span></div>
+              </div>
+            </div>
+          </div>
+          <!-- Sidebar -->
+          <div>
+            <div class="side-card">
+              <div class="sc-head"><span class="sc-title">🏆 Previsores em destaque</span><span class="sc-more">Ranking →</span></div>
+              <div class="pv"><span class="pv-rank g">1</span><div class="av av-sm" style="background:#FEE2E2;color:#991B1B">AV</div><div class="pv-info"><div class="pv-name">analista.vital</div><div style="display:flex;gap:5px;margin-top:2px"><span class="pv-level elite">🏅 Elite</span></div><div class="mini-track"><div class="b g" style="height:90%"></div><div class="b g" style="height:85%"></div><div class="b g" style="height:95%"></div><div class="b o" style="height:60%"></div><div class="b g" style="height:92%"></div><div class="b g" style="height:96%"></div></div><div class="pv-acc">89% acurácia · 2.341 prev</div></div></div>
+              <div class="pv"><span class="pv-rank s">2</span><div class="av av-sm" style="background:#DBEAFE;color:#1E40AF">ML</div><div class="pv-info"><div class="pv-name">macrolivre</div><div style="display:flex;gap:5px;margin-top:2px"><span class="pv-level expert">📊 Expert</span></div><div class="mini-track"><div class="b g" style="height:82%"></div><div class="b g" style="height:88%"></div><div class="b o" style="height:55%"></div><div class="b g" style="height:90%"></div><div class="b g" style="height:85%"></div><div class="b g" style="height:87%"></div></div><div class="pv-acc">84% acurácia · 1.987 prev</div></div></div>
+              <div class="pv"><span class="pv-rank b">3</span><div class="av av-sm" style="background:#D1FAE5;color:#065F46">FP</div><div class="pv-info"><div class="pv-name">futuro.prob</div><div style="display:flex;gap:5px;margin-top:2px"><span class="pv-level expert">📊 Expert</span></div><div class="mini-track"><div class="b g" style="height:80%"></div><div class="b o" style="height:58%"></div><div class="b g" style="height:86%"></div><div class="b g" style="height:82%"></div><div class="b g" style="height:88%"></div><div class="b g" style="height:85%"></div></div><div class="pv-acc">82% acurácia · 1.654 prev</div></div></div>
+            </div>
+            <div class="side-card">
+              <div class="sc-head"><span class="sc-title">📰 Notícias recentes</span><span class="sc-more">Todas →</span></div>
+              <div class="sn"><div class="sn-src">Reuters <span class="time">· 45min</span></div><div class="sn-title">Bitcoin ultrapassa US$ 94 mil e renova máxima</div><span class="sn-tag">🎯 Bitcoin R$500k · 61%</span></div>
+              <div class="sn"><div class="sn-src">Folha <span class="time">· 2h</span></div><div class="sn-title">Copom sinaliza manutenção da Selic em março</div><span class="sn-tag">🎯 Selic 10% · 48%</span></div>
+              <div class="sn"><div class="sn-src">Valor <span class="time">· 3h</span></div><div class="sn-title">Petrobras anuncia dividendos extras de R$ 5,2 bi</div><span class="sn-tag">🎯 Petrobras · 78%</span></div>
+            </div>
+            <div class="side-card">
+              <div class="sc-head"><span class="sc-title">🔥 Em alta</span></div>
+              <div class="tr"><div class="tr-n">1</div><div class="tr-body"><div class="tr-q">Bitcoin acima de R$ 500k?</div></div><div class="tr-right"><div class="tr-pct">61%</div><div class="tr-delta up">▲ 8</div></div></div>
+              <div class="tr"><div class="tr-n">2</div><div class="tr-body"><div class="tr-q">Petrobras dividendos extras?</div></div><div class="tr-right"><div class="tr-pct">78%</div><div class="tr-delta up">▲ 22</div></div></div>
+              <div class="tr"><div class="tr-n">3</div><div class="tr-body"><div class="tr-q">Selic abaixo de 10%?</div></div><div class="tr-right"><div class="tr-pct">48%</div><div class="tr-delta dn">▼ 2</div></div></div>
+              <div class="tr"><div class="tr-n">4</div><div class="tr-body"><div class="tr-q">Ibovespa 150.000 pts?</div></div><div class="tr-right"><div class="tr-pct">54%</div><div class="tr-delta up">▲ 3</div></div></div>
+            </div>
+          </div>
+        </div>
+        <!-- CTA bar -->
+        <div style="max-width:var(--w);margin:0 auto;padding:0 24px 40px">
+          <div class="cta-bar"><div><h3>Mostre que você entende o futuro</h3><p>Crie sua conta gratuita e construa sua reputação de previsor.</p></div><button class="btn btn-accent" style="font-size:13px;padding:11px 24px;flex-shrink:0">Comece grátis →</button></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ████████ B1-02 Lista Eventos ████████ -->
+    <div id="B1-02" class="screen">
+      <div class="screen-scroll">
+        <div class="topnav"><div class="nav-in"><div class="n-logo"><span class="i">i</span><span class="t">PYSY</span></div><div class="n-links"><div class="n-link">Explorar</div><div class="n-link active">Mercados</div><div class="n-link">Ranking</div></div><div class="n-right"><div class="n-search"><svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg><span>Buscar...</span></div><button class="n-btn-accent">Comece grátis</button></div></div></div>
+        <div class="catbar"><div class="catbar-in"><div class="cat-t active">🔥 Em alta</div><div class="cat-t">Economia <span class="cnt">18</span></div><div class="cat-t">Política <span class="cnt">12</span></div><div class="cat-t">Mercados <span class="cnt">9</span></div><div class="cat-t">Esportes <span class="cnt">14</span></div></div></div>
+        <div style="max-width:var(--w);margin:0 auto;padding:24px;display:grid;grid-template-columns:1fr 280px;gap:28px">
+          <div>
+            <div style="display:flex;gap:10px;margin-bottom:20px">
+              <div style="position:relative;flex:1"><svg style="position:absolute;left:12px;top:50%;transform:translateY(-50%);width:14px;height:14px;color:var(--ink-4)" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg><input class="inp" style="padding-left:36px" placeholder="Buscar eventos..." /></div>
+              <button class="btn btn-ghost" style="font-size:12px">🔽 Filtros</button>
+            </div>
+            <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:14px"><div style="font-size:17px;font-weight:800;letter-spacing:-.02em;color:var(--ink)">Lista de Eventos</div><span style="font-size:11px;color:var(--ink-4)">6 resultados</span></div>
+            <div class="space-y-3">
+              <div class="ev"><div class="ev-top">₿ Economia<span class="ev-date">31 dez 2026</span></div><div class="ev-title">Bitcoin acima de R$ 500.000 em 2026?</div><div class="ev-bar-row"><span class="y">61% Sim</span><span class="n">39% Não</span></div><div class="ev-track"><div class="ev-fill" style="width:61%"></div></div><div class="ev-foot"><span>📊 1.204</span><span class="trend up">▲ +8pp</span></div></div>
+              <div class="ev"><div class="ev-top">💰 Economia<span class="ev-date">31 dez 2026</span></div><div class="ev-title">Selic abaixo de 10% ao final de 2026?</div><div class="ev-bar-row"><span class="y">48% Sim</span><span class="n">52% Não</span></div><div class="ev-track"><div class="ev-fill" style="width:48%"></div></div><div class="ev-foot"><span>📊 341</span><span class="trend dn">▼ -2pp</span></div></div>
+              <div class="ev"><div class="ev-top">🏛️ Política<span class="ev-date">31 dez 2026</span></div><div class="ev-title">Reforma tributária aprovada integralmente?</div><div class="ev-bar-row"><span class="y">65% Sim</span><span class="n">35% Não</span></div><div class="ev-track"><div class="ev-fill" style="width:65%"></div></div><div class="ev-foot"><span>📊 187</span><span class="trend up">▲ +5pp</span></div></div>
+              <div class="ev"><div class="ev-top">📊 Mercados<span class="ev-date">30 jun 2026</span></div><div class="ev-title">Ibovespa acima de 150.000 pontos?</div><div class="ev-bar-row"><span class="y">54% Sim</span><span class="n">46% Não</span></div><div class="ev-track"><div class="ev-fill" style="width:54%"></div></div><div class="ev-foot"><span>📊 678</span><span class="trend up">▲ +3pp</span></div></div>
+              <div class="ev"><div class="ev-top">🌐 Mundo<span class="ev-date">2030</span></div><div class="ev-title">Brasil entrará para o G7 até 2030?</div><div class="ev-bar-row"><span class="y">12% Sim</span><span class="n">88% Não</span></div><div class="ev-track"><div class="ev-fill" style="width:12%"></div></div><div class="ev-foot"><span>📊 52</span><span class="trend dn">▼ -1pp</span></div></div>
+            </div>
+          </div>
+          <div>
+            <div class="side-card"><div class="sc-head"><span class="sc-title">🔥 Em alta</span></div><div class="tr"><div class="tr-n">1</div><div class="tr-body"><div class="tr-q">Bitcoin acima de R$ 500k?</div></div><div class="tr-right"><div class="tr-pct">61%</div><div class="tr-delta up">▲ 8</div></div></div><div class="tr"><div class="tr-n">2</div><div class="tr-body"><div class="tr-q">Petrobras dividendos extras?</div></div><div class="tr-right"><div class="tr-pct">78%</div><div class="tr-delta up">▲ 22</div></div></div><div class="tr"><div class="tr-n">3</div><div class="tr-body"><div class="tr-q">Selic abaixo de 10%?</div></div><div class="tr-right"><div class="tr-pct">48%</div><div class="tr-delta dn">▼ 2</div></div></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ████████ B1-03 Detalhe Evento ████████ -->
+    <div id="B1-03" class="screen">
+      <div class="screen-scroll">
+        <div class="topnav"><div class="nav-in"><div class="n-logo"><span class="i">i</span><span class="t">PYSY</span></div><div class="n-links"><div class="n-link">Explorar</div><div class="n-link active">Mercados</div></div><div class="n-right"><div class="n-search"><svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg><span>Buscar...</span></div><button class="n-btn-accent">Comece grátis</button></div></div></div>
+        <div style="max-width:800px;margin:0 auto;padding:24px">
+          <div class="breadcrumb"><a>Mercados</a><span class="sep">›</span><span>Economia</span></div>
+          <div style="display:flex;gap:16px;align-items:flex-start;margin-bottom:16px">
+            <div style="flex:1"><div style="font-size:10px;font-weight:800;color:var(--accent-dk);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px">Economia</div><h1 style="font-size:22px;font-weight:800;letter-spacing:-.03em;color:var(--ink);line-height:1.25">O Banco Central reduzirá a Selic abaixo de 12% até dezembro de 2026?</h1></div>
+            <div class="igci high md"><div class="igci-val">72%</div><div class="igci-label">IGCI</div></div>
+          </div>
+          <div style="display:flex;gap:16px;font-size:11px;color:var(--ink-4);margin-bottom:20px"><span>📅 Encerra em 31 dez 2026</span><span>👥 1.847 participantes</span><span>📈 ▲ +4pp esta semana</span></div>
+          <div class="ev-dual" style="margin-bottom:20px">
+            <div class="ev-dual-item gen"><div class="ev-dual-label">Consenso geral</div><div class="ev-dual-val">72%</div><div class="ev-dual-sub">1.847 previsores</div></div>
+            <div class="ev-dual-item cal"><div class="ev-dual-label">🎯 Calibrado</div><div class="ev-dual-val">68%</div><div class="ev-dual-sub">Top 200 previsores</div></div>
+          </div>
+          <div class="card" style="margin-bottom:16px"><div class="brier-wrap"><div class="brier-head"><span class="brier-lbl">Brier Score da comunidade</span><div><span class="brier-score">0.187</span><span class="brier-quality good">Bom</span></div></div><div class="brier-track"><div class="brier-fill good" style="width:81%"></div></div></div></div>
+          <div class="gate-card">
+            <div style="width:38px;height:38px;border-radius:50%;background:rgba(35,54,112,.08);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:17px">🔒</div>
+            <div style="flex:1"><p style="font-size:13px;font-weight:700;color:var(--ink);margin-bottom:3px">Histórico e detalhes disponíveis no Premium</p><p style="font-size:12px;color:var(--ink-3)">Acesse análises detalhadas, histórico de IGCI e simulações.</p></div>
+            <button class="btn btn-accent" style="font-size:12px;flex-shrink:0">Ver Premium</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ████████ B2-01 Boas-vindas Free ████████ -->
+    <div id="B2-01" class="screen">
+      <div class="screen-scroll">
+        <div class="topnav"><div class="nav-in"><div class="n-logo"><span class="i">i</span><span class="t">PYSY</span></div><div class="n-links"><div class="n-link active">Explorar</div><div class="n-link">Mercados</div></div><div class="n-right"><div class="n-search"><svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg><span>Buscar...</span></div><div class="n-avatar">CE</div></div></div></div>
+        <div class="app-wrap">
+          <div class="app-sidebar">
+            <div class="side-card"><div class="side-section-title">Categorias</div><div class="side-link">Economia</div><div class="side-link">Política</div><div class="side-link">Mercados</div></div>
+            <div class="side-card"><div class="side-section-title">Minha conta</div><div class="side-link active">Dashboard</div><div class="side-link">Rankings</div><div class="side-link">Academia IP</div></div>
+          </div>
+          <div class="app-main" style="max-width:600px">
+            <div class="page-title">Bem-vindo, Carlos!</div>
+            <p class="page-sub">Você está no plano Free. Complete as etapas abaixo para começar a prever.</p>
+            <div class="space-y-3">
+              <div class="card" style="display:flex;gap:14px;align-items:flex-start"><div style="width:30px;height:30px;border-radius:50%;background:var(--surface-3);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:var(--ink-4);flex-shrink:0">1</div><div><p style="font-size:13px;font-weight:700;color:var(--ink)">Faça sua primeira previsão</p><p style="font-size:12px;color:var(--ink-3);margin-top:2px">Escolha um evento e registre sua estimativa.</p></div></div>
+              <div class="card" style="display:flex;gap:14px;align-items:flex-start"><div style="width:30px;height:30px;border-radius:50%;background:var(--surface-3);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:var(--ink-4);flex-shrink:0">2</div><div><p style="font-size:13px;font-weight:700;color:var(--ink)">Complete seu perfil</p><p style="font-size:12px;color:var(--ink-3);margin-top:2px">Adicione foto e bio para ganhar visibilidade.</p></div></div>
+              <div class="card" style="display:flex;gap:14px;align-items:flex-start"><div style="width:30px;height:30px;border-radius:50%;background:var(--surface-3);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:var(--ink-4);flex-shrink:0">3</div><div><p style="font-size:13px;font-weight:700;color:var(--ink)">Participe do ranking</p><p style="font-size:12px;color:var(--ink-3);margin-top:2px">Veja onde você está entre os previsores.</p></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ████████ B2-02 Dashboard Free ████████ -->
+    <div id="B2-02" class="screen">
+      <div class="screen-scroll">
+        <div class="topnav"><div class="nav-in"><div class="n-logo"><span class="i">i</span><span class="t">PYSY</span></div><div class="n-links"><div class="n-link active">Dashboard</div><div class="n-link">Mercados</div><div class="n-link">Ranking</div></div><div class="n-right"><div class="n-search"><svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg><span>Buscar...</span></div><div class="n-avatar">CE</div></div></div></div>
+        <div class="app-wrap">
+          <div class="app-sidebar"><div class="side-card"><div class="side-section-title">Categorias</div><div class="side-link">Economia</div><div class="side-link">Política</div></div><div class="side-card"><div class="side-section-title">Minha conta</div><div class="side-link active">Dashboard</div><div class="side-link">Rankings</div><div class="side-link">Academia IP</div></div></div>
+          <div class="app-main space-y-6">
+            <div class="card card-lg">
+              <div style="display:flex;align-items:center;gap:14px;margin-bottom:16px"><div class="av av-md" style="background:#DBEAFE;color:#1E40AF">CE</div><div><p style="font-size:15px;font-weight:700;color:var(--ink)">Carlos Eduardo</p><p style="font-size:11px;color:var(--blue-lt);font-weight:700">Observador</p></div></div>
+              <div class="grid-3" style="padding-top:14px;border-top:1px solid var(--line);text-align:center">
+                <div><p style="font-size:22px;font-weight:800;color:var(--ink);letter-spacing:-.04em">18</p><p style="font-size:10px;color:var(--ink-4);margin-top:2px">Previsões</p></div>
+                <div><p style="font-size:22px;font-weight:800;color:var(--ink);letter-spacing:-.04em">61%</p><p style="font-size:10px;color:var(--ink-4);margin-top:2px">Precisão</p></div>
+                <div><p style="font-size:22px;font-weight:800;color:var(--ink);letter-spacing:-.04em">0.312</p><p style="font-size:10px;color:var(--ink-4);margin-top:2px">Brier Score</p></div>
+              </div>
+              <div style="margin-top:14px"><div class="brier-wrap"><div class="brier-head"><span class="brier-lbl">Brier Score</span><div><span class="brier-score">0.312</span><span class="brier-quality regular">Regular</span></div></div><div class="brier-track"><div class="brier-fill regular" style="width:69%"></div></div></div></div>
+            </div>
+            <div>
+              <h2 class="sec">Eventos para você</h2>
+              <div class="ev-grid">
+                <div class="ev"><div class="ev-top">₿ Economia<span class="ev-date">31 dez 2026</span></div><div class="ev-title">Bitcoin acima de R$ 500.000 em 2026?</div><div class="ev-bar-row"><span class="y">61% Sim</span><span class="n">39% Não</span></div><div class="ev-track"><div class="ev-fill" style="width:61%"></div></div><div class="ev-foot"><span>📊 1.204</span><span class="trend up">▲ +8pp</span></div></div>
+                <div class="ev"><div class="ev-top">📊 Mercados<span class="ev-date">30 jun 2026</span></div><div class="ev-title">Ibovespa acima de 150.000 pontos?</div><div class="ev-bar-row"><span class="y">54% Sim</span><span class="n">46% Não</span></div><div class="ev-track"><div class="ev-fill" style="width:54%"></div></div><div class="ev-foot"><span>📊 678</span><span class="trend up">▲ +3pp</span></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ████████ B2-03 Rankings ████████ -->
+    <div id="B2-03" class="screen">
+      <div class="screen-scroll">
+        <div class="topnav"><div class="nav-in"><div class="n-logo"><span class="i">i</span><span class="t">PYSY</span></div><div class="n-links"><div class="n-link">Dashboard</div><div class="n-link">Mercados</div><div class="n-link active">Ranking</div></div><div class="n-right"><div class="n-search"><svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg><span>Buscar...</span></div><div class="n-avatar">CE</div></div></div></div>
+        <div class="app-wrap">
+          <div class="app-sidebar"><div class="side-card"><div class="side-section-title">Minha conta</div><div class="side-link">Dashboard</div><div class="side-link active">Rankings</div><div class="side-link">Academia IP</div></div></div>
+          <div class="app-main" style="max-width:620px">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px"><span style="font-size:20px">🏆</span><div class="page-title" style="margin-bottom:0">Rankings</div></div>
+            <div class="tbl-wrap">
+              <table><thead><tr><th>#</th><th>Previsor</th><th style="text-align:right">Brier Score</th><th style="text-align:right">Previsões</th></tr></thead>
+              <tbody>
+                <tr><td><span style="font-size:16px">🥇</span></td><td><p style="font-size:13px;font-weight:700;color:var(--ink)">analista.vital</p><p class="mono text-muted">gid_7f4a2b9c</p></td><td style="text-align:right"><span style="font-weight:800;color:var(--accent-dk)">0.087</span></td><td style="text-align:right;color:var(--ink-4)">2.341</td></tr>
+                <tr><td><span style="font-size:16px">🥈</span></td><td><p style="font-size:13px;font-weight:700;color:var(--ink)">macrolivre</p><p class="mono text-muted">gid_3c1d9e4f</p></td><td style="text-align:right"><span style="font-weight:800;color:var(--accent-dk)">0.112</span></td><td style="text-align:right;color:var(--ink-4)">1.987</td></tr>
+                <tr><td><span style="font-size:16px">🥉</span></td><td><p style="font-size:13px;font-weight:700;color:var(--ink)">futuro.prob</p><p class="mono text-muted">gid_8a2f1b3e</p></td><td style="text-align:right"><span style="font-weight:800;color:#D69E2E">0.134</span></td><td style="text-align:right;color:var(--ink-4)">1.654</td></tr>
+                <tr><td style="font-weight:800;color:var(--ink-4)">4</td><td><p style="font-size:13px;font-weight:700;color:var(--ink)">Ana Beatriz</p><p class="mono text-muted">gid_2d9c7e1a</p></td><td style="text-align:right"><span style="font-weight:800;color:#D69E2E">0.187</span></td><td style="text-align:right;color:var(--ink-4)">142</td></tr>
+                <tr><td style="font-weight:800;color:var(--ink-4)">5</td><td><p style="font-size:13px;font-weight:700;color:var(--ink)">Carlos Eduardo</p><p class="mono text-muted">gid_5e3b8d4c</p></td><td style="text-align:right"><span style="font-weight:800;color:var(--warn)">0.312</span></td><td style="text-align:right;color:var(--ink-4)">18</td></tr>
+              </tbody></table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ████████ B2-04 Perfil Free ████████ -->
+    <div id="B2-04" class="screen">
+      <div class="screen-scroll">
+        <div class="topnav"><div class="nav-in"><div class="n-logo"><span class="i">i</span><span class="t">PYSY</span></div><div class="n-links"><div class="n-link active">Dashboard</div><div class="n-link">Mercados</div></div><div class="n-right"><div class="n-search"><svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg><span>Buscar...</span></div><div class="n-avatar">CE</div></div></div></div>
+        <div class="app-wrap">
+          <div class="app-main" style="max-width:480px">
+            <div class="page-title">Meu perfil</div>
+            <div class="card card-lg space-y-4">
+              <div style="display:flex;align-items:center;gap:14px"><div class="av av-lg" style="background:#DBEAFE;color:#1E40AF">CE</div><div><p style="font-size:16px;font-weight:800;color:var(--ink)">Carlos Eduardo</p><p class="mono text-muted">gid_3c1d9e4f</p><span class="badge badge-blue mt-1">Observador</span></div></div>
+              <div style="padding-top:14px;border-top:1px solid var(--line)"><div class="brier-wrap"><div class="brier-head"><span class="brier-lbl">Brier Score</span><div><span class="brier-score">0.312</span><span class="brier-quality regular">Regular</span></div></div><div class="brier-track"><div class="brier-fill regular" style="width:69%"></div></div></div></div>
+              <div class="grid-2" style="padding-top:14px;border-top:1px solid var(--line);text-align:center">
+                <div><p style="font-size:22px;font-weight:800;color:var(--ink);letter-spacing:-.04em">18</p><p style="font-size:10px;color:var(--ink-4);margin-top:2px">Previsões</p></div>
+                <div><p style="font-size:22px;font-weight:800;color:var(--ink);letter-spacing:-.04em">61%</p><p style="font-size:10px;color:var(--ink-4);margin-top:2px">Taxa de acerto</p></div>
+              </div>
+            </div>
+            <div class="gate-card mt-4"><div style="flex:1"><p style="font-size:13px;font-weight:700;color:var(--ink);margin-bottom:3px">Desbloqueie o plano Premium</p><p style="font-size:12px;color:var(--ink-3);margin-bottom:12px">Acesse histórico completo, simulações e análises avançadas.</p><button class="btn btn-accent" style="font-size:12px">Ver Premium</button></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ████████ B3-01 Dashboard Premium ████████ -->
+    <div id="B3-01" class="screen">
+      <div class="screen-scroll">
+        <div class="topnav"><div class="nav-in"><div class="n-logo"><span class="i">i</span><span class="t">PYSY</span></div><div class="n-links"><div class="n-link active">Dashboard</div><div class="n-link">Mercados</div><div class="n-link">Simulações</div></div><div class="n-right"><div class="n-search"><svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg><span>Buscar...</span></div><div class="n-avatar">AB</div></div></div></div>
+        <div class="app-wrap">
+          <div class="app-sidebar"><div class="side-card"><div class="side-section-title">Categorias</div><div class="side-link">Economia</div><div class="side-link">Política</div></div><div class="side-card"><div class="side-section-title">Minha conta</div><div class="side-link active">Dashboard</div><div class="side-link">Rankings</div><div class="side-link">Simulações</div></div></div>
+          <div class="app-main space-y-6">
+            <div class="page-title">Dashboard Premium</div>
+            <div class="ev-grid">
+              <div class="ev"><div class="ev-top">₿ Economia<span class="ev-date">31 dez 2026</span></div><div class="ev-title">Bitcoin acima de R$ 500.000 em 2026?</div><div class="ev-bar-row"><span class="y">61% Sim</span><span class="n">39% Não</span></div><div class="ev-track"><div class="ev-fill" style="width:61%"></div></div><div class="ev-foot"><span>📊 1.204</span><span class="trend up">▲ +8pp</span></div></div>
+              <div class="ev"><div class="ev-top">💰 Economia<span class="ev-date">31 dez 2026</span></div><div class="ev-title">Selic abaixo de 10% ao final de 2026?</div><div class="ev-bar-row"><span class="y">48% Sim</span><span class="n">52% Não</span></div><div class="ev-track"><div class="ev-fill" style="width:48%"></div></div><div class="ev-foot"><span>📊 341</span><span class="trend dn">▼ -2pp</span></div></div>
+              <div class="ev"><div class="ev-top">🏛️ Política<span class="ev-date">31 dez 2026</span></div><div class="ev-title">Reforma tributária aprovada integralmente?</div><div class="ev-bar-row"><span class="y">65% Sim</span><span class="n">35% Não</span></div><div class="ev-track"><div class="ev-fill" style="width:65%"></div></div><div class="ev-foot"><span>📊 187</span><span class="trend up">▲ +5pp</span></div></div>
+              <div class="ev"><div class="ev-top">📊 Mercados<span class="ev-date">30 jun 2026</span></div><div class="ev-title">Ibovespa acima de 150.000 pontos?</div><div class="ev-bar-row"><span class="y">54% Sim</span><span class="n">46% Não</span></div><div class="ev-track"><div class="ev-fill" style="width:54%"></div></div><div class="ev-foot"><span>📊 678</span><span class="trend up">▲ +3pp</span></div></div>
+            </div>
+          </div>
+          <div class="app-context space-y-4">
+            <div class="card"><h3 style="font-size:10px;font-weight:800;color:var(--ink-4);text-transform:uppercase;letter-spacing:.08em;margin-bottom:12px">Meu desempenho</h3><div style="text-align:center;margin-bottom:12px"><div class="igci high lg" style="display:inline-flex"><div class="igci-val">73%</div><div class="igci-label">IGCI</div></div></div><div class="brier-wrap"><div class="brier-head"><span class="brier-lbl">Brier Score</span><div><span class="brier-score">0.187</span><span class="brier-quality good">Bom</span></div></div><div class="brier-track"><div class="brier-fill good" style="width:81%"></div></div></div></div>
+            <div class="card"><h3 style="font-size:10px;font-weight:800;color:var(--ink-4);text-transform:uppercase;letter-spacing:.08em;margin-bottom:12px">Histórico IGCI</h3><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><span style="font-size:12px;color:var(--ink-2)">Este mês</span><div class="igci high sm" style="padding:3px 8px;display:inline-flex"><div class="igci-val">73%</div></div></div><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><span style="font-size:12px;color:var(--ink-2)">Mês passado</span><div class="igci mid sm" style="padding:3px 8px;display:inline-flex"><div class="igci-val">68%</div></div></div><div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:12px;color:var(--ink-2)">Há 2 meses</span><div class="igci mid sm" style="padding:3px 8px;display:inline-flex"><div class="igci-val">61%</div></div></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ████████ B3-02 Detalhe + Previsão ████████ -->
+    <div id="B3-02" class="screen">
+      <div class="screen-scroll">
+        <div class="topnav"><div class="nav-in"><div class="n-logo"><span class="i">i</span><span class="t">PYSY</span></div><div class="n-links"><div class="n-link active">Dashboard</div><div class="n-link">Mercados</div></div><div class="n-right"><div class="n-search"><svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg><span>Buscar...</span></div><div class="n-avatar">AB</div></div></div></div>
+        <div style="max-width:760px;margin:0 auto;padding:24px" class="space-y-5">
+          <div class="breadcrumb"><a>Dashboard</a><span class="sep">›</span><span>Economia</span></div>
+          <div style="display:flex;gap:16px;align-items:flex-start"><div style="flex:1"><div style="font-size:10px;font-weight:800;color:var(--accent-dk);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px">Economia</div><h1 style="font-size:20px;font-weight:800;letter-spacing:-.03em;color:var(--ink);line-height:1.25">O Banco Central reduzirá a Selic abaixo de 12% até dezembro de 2026?</h1></div><div class="igci high lg"><div class="igci-val">72%</div><div class="igci-label">IGCI</div></div></div>
+          <div style="display:flex;gap:14px;font-size:11px;color:var(--ink-4)"><span>📅 31 dez 2026</span><span>👥 1.847</span></div>
+          <div class="ev-dual">
+            <div class="ev-dual-item gen"><div class="ev-dual-label">Consenso geral</div><div class="ev-dual-val">72%</div><div class="ev-dual-sub">1.847 previsores</div></div>
+            <div class="ev-dual-item cal"><div class="ev-dual-label">🎯 Calibrado</div><div class="ev-dual-val">68%</div><div class="ev-dual-sub">Top 200 previsores</div></div>
+          </div>
+          <div class="card"><div class="brier-wrap"><div class="brier-head"><span class="brier-lbl">Brier Score da comunidade</span><div><span class="brier-score">0.134</span><span class="brier-quality good">Bom</span></div></div><div class="brier-track"><div class="brier-fill good" style="width:87%"></div></div></div></div>
+          <div class="card space-y-4"><h2 class="sec">Sua previsão</h2><div><label style="font-size:11px;font-weight:700;color:var(--ink-4);display:block;margin-bottom:8px">Probabilidade de ocorrer (0–100%)</label><div class="range-wrap"><input type="range" min="0" max="100" value="65" oninput="this.nextElementSibling.textContent=this.value+'%'" /><span class="range-val">65%</span></div></div><button class="btn btn-accent w-full" style="justify-content:center;padding:12px;font-size:13px">Registrar previsão →</button></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ████████ B3-03 Filtros ████████ -->
+    <div id="B3-03" class="screen">
+      <div class="screen-scroll">
+        <div class="topnav"><div class="nav-in"><div class="n-logo"><span class="i">i</span><span class="t">PYSY</span></div><div class="n-links"><div class="n-link">Dashboard</div><div class="n-link active">Filtros</div></div><div class="n-right"><div class="n-avatar">AB</div></div></div></div>
+        <div class="app-wrap">
+          <div class="app-main space-y-5">
+            <div class="page-title">Filtros & Reputação</div>
+            <div class="card space-y-4"><h2 class="sec">Filtrar por categoria</h2><div style="display:flex;flex-wrap:wrap;gap:8px"><div class="cat-pill active">Economia</div><div class="cat-pill">Fiscal</div><div class="cat-pill active">Inflação</div><div class="cat-pill">Política</div><div class="cat-pill">Mercados</div></div><div><label style="font-size:11px;font-weight:700;color:var(--ink-4);display:block;margin-bottom:6px">IGCI mínimo: 40%</label><input type="range" min="0" max="100" value="40" /></div></div>
+            <p style="font-size:11px;color:var(--ink-4)">4 eventos encontrados</p>
+            <div class="ev-grid">
+              <div class="ev"><div class="ev-top">₿ Economia<span class="ev-date">31 dez 2026</span></div><div class="ev-title">Bitcoin acima de R$ 500.000 em 2026?</div><div class="ev-bar-row"><span class="y">61% Sim</span><span class="n">39% Não</span></div><div class="ev-track"><div class="ev-fill" style="width:61%"></div></div><div class="ev-foot"><span>📊 1.204</span><span class="trend up">▲ +8pp</span></div></div>
+              <div class="ev"><div class="ev-top">📊 Mercados<span class="ev-date">30 jun 2026</span></div><div class="ev-title">Ibovespa acima de 150.000 pontos?</div><div class="ev-bar-row"><span class="y">54% Sim</span><span class="n">46% Não</span></div><div class="ev-track"><div class="ev-fill" style="width:54%"></div></div><div class="ev-foot"><span>📊 678</span><span class="trend up">▲ +3pp</span></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ████████ B3-04 Simulações ████████ -->
+    <div id="B3-04" class="screen">
+      <div class="screen-scroll">
+        <div class="topnav"><div class="nav-in"><div class="n-logo"><span class="i">i</span><span class="t">PYSY</span></div><div class="n-links"><div class="n-link">Dashboard</div><div class="n-link active">Simulações</div></div><div class="n-right"><div class="n-avatar">AB</div></div></div></div>
+        <div class="app-wrap">
+          <div class="app-main space-y-5" style="max-width:500px">
+            <div><div class="page-title">Simulações</div><p class="page-sub">Simule o impacto de uma previsão no seu Brier Score antes de registrá-la.</p></div>
+            <div class="card space-y-4"><h2 class="sec">Sua previsão</h2><div><label style="font-size:11px;font-weight:700;color:var(--ink-4);display:block;margin-bottom:6px">Probabilidade estimada: <span style="color:var(--ink);font-weight:800">60%</span></label><input type="range" min="1" max="99" value="60" /><div style="display:flex;justify-content:space-between;font-size:10px;color:var(--ink-4);margin-top:3px"><span>Improvável</span><span>Muito provável</span></div></div><div style="text-align:center;padding-top:4px"><div class="igci mid md" style="display:inline-flex"><div class="igci-val">60%</div><div class="igci-label">IGCI simulado</div></div></div></div>
+            <div class="grid-2">
+              <div class="sim-card" style="background:rgba(43,122,120,.06);border:1px solid rgba(43,122,120,.18)"><div class="sim-label">Brier se acertar</div><div class="sim-val" style="color:var(--accent-dk)">0.160</div></div>
+              <div class="sim-card" style="background:var(--warn-bg);border:1px solid rgba(214,69,69,.2)"><div class="sim-label">Brier se errar</div><div class="sim-val" style="color:var(--warn)">0.360</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ████████ B3-05 Perfil Premium ████████ -->
+    <div id="B3-05" class="screen">
+      <div class="screen-scroll">
+        <div class="topnav"><div class="nav-in"><div class="n-logo"><span class="i">i</span><span class="t">PYSY</span></div><div class="n-links"><div class="n-link active">Dashboard</div><div class="n-link">Mercados</div></div><div class="n-right"><div class="n-avatar">AB</div></div></div></div>
+        <div class="app-wrap">
+          <div class="app-main" style="max-width:480px">
+            <div class="page-title">Perfil Premium</div>
+            <div class="card card-lg space-y-4">
+              <div style="display:flex;align-items:center;gap:14px"><div class="av av-lg" style="background:#FEE2E2;color:#991B1B">AB</div><div><p style="font-size:15px;font-weight:800;color:var(--ink)">Ana Beatriz</p><p class="mono text-muted">gid_7f4a2b9c</p><div style="display:flex;gap:6px;margin-top:6px"><span class="badge badge-blue">Contribuidor</span><span class="badge badge-green">Premium</span></div></div></div>
+              <div style="padding-top:14px;border-top:1px solid var(--line)"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px"><span style="font-size:11px;font-weight:700;color:var(--ink-4)">IGCI atual</span><div class="igci high sm" style="display:inline-flex"><div class="igci-val">73%</div></div></div><div class="brier-wrap"><div class="brier-head"><span class="brier-lbl">Brier Score</span><div><span class="brier-score" style="font-size:19px">0.187</span><span class="brier-quality good">Bom</span></div></div><div class="brier-track"><div class="brier-fill good" style="width:81%"></div></div></div></div>
+              <div class="grid-3" style="padding-top:14px;border-top:1px solid var(--line);text-align:center">
+                <div><p style="font-size:22px;font-weight:800;color:var(--ink);letter-spacing:-.04em">142</p><p style="font-size:10px;color:var(--ink-4);margin-top:2px">Previsões</p></div>
+                <div><p style="font-size:22px;font-weight:800;color:var(--ink);letter-spacing:-.04em">73%</p><p style="font-size:10px;color:var(--ink-4);margin-top:2px">Acerto</p></div>
+                <div><p style="font-size:22px;font-weight:800;color:var(--ink);letter-spacing:-.04em">#12</p><p style="font-size:10px;color:var(--ink-4);margin-top:2px">Ranking</p></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ████████ B4-01 Dashboard Business ████████ -->
+    <div id="B4-01" class="screen">
+      <div class="screen-scroll">
+        <div class="topnav"><div class="nav-in"><div class="n-logo"><span class="i">i</span><span class="t">PYSY</span></div><div class="n-links"><div class="n-link active">Dashboard</div><div class="n-link">Criar Evento</div><div class="n-link">API</div><div class="n-link">Times</div></div><div class="n-right"><div class="n-avatar">MS</div></div></div></div>
+        <div class="app-wrap">
+          <div class="app-main space-y-6">
+            <div class="page-title">Dashboard Business</div>
+            <div class="grid-4">
+              <div class="kpi-card"><div class="kpi-icon">📊</div><div class="kpi-value">24</div><div class="kpi-label">Eventos ativos</div><div class="kpi-delta">+12% este mês</div></div>
+              <div class="kpi-card"><div class="kpi-icon" style="color:var(--accent-dk)">👥</div><div class="kpi-value" style="color:var(--accent-dk)">8.4k</div><div class="kpi-label">Participantes</div><div class="kpi-delta">+8% este mês</div></div>
+              <div class="kpi-card"><div class="kpi-icon" style="color:#D69E2E">📈</div><div class="kpi-value" style="color:#92600A">64%</div><div class="kpi-label">IGCI médio</div><div class="kpi-delta">+2pp esta semana</div></div>
+              <div class="kpi-card"><div class="kpi-icon">⚡</div><div class="kpi-value">12.1k</div><div class="kpi-label">API calls/dia</div><div class="kpi-delta">50k limite diário</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ████████ B4-02 Criar Evento ████████ -->
+    <div id="B4-02" class="screen">
+      <div class="screen-scroll">
+        <div class="topnav"><div class="nav-in"><div class="n-logo"><span class="i">i</span><span class="t">PYSY</span></div><div class="n-links"><div class="n-link">Dashboard</div><div class="n-link active">Criar Evento</div></div><div class="n-right"><div class="n-avatar">MS</div></div></div></div>
+        <div class="app-wrap">
+          <div class="app-main" style="max-width:560px">
+            <div class="page-title">Criar evento</div>
+            <div class="card card-lg space-y-4">
+              <div class="field"><label>Pergunta do evento</label><textarea class="inp" rows="3" placeholder="O Banco Central reduzirá a Selic abaixo de 12% até dezembro de 2026?"></textarea><p style="font-size:11px;color:var(--ink-4);margin-top:3px">0/200 caracteres</p></div>
+              <div class="grid-2">
+                <div class="field"><label>Categoria</label><select class="inp"><option value="">Selecionar...</option><option>Economia</option><option>Política</option><option>Mercados</option><option>Tecnologia</option></select></div>
+                <div class="field"><label>Data limite</label><input class="inp" type="date" /></div>
+              </div>
+              <button class="btn-continue off" aria-disabled="true">Publicar evento</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ████████ B4-03 Editor Insight ████████ -->
+    <div id="B4-03" class="screen">
+      <div class="screen-scroll">
+        <div class="topnav"><div class="nav-in"><div class="n-logo"><span class="i">i</span><span class="t">PYSY</span></div><div class="n-links"><div class="n-link">Dashboard</div><div class="n-link active">Insights</div></div><div class="n-right"><div class="n-avatar">MS</div></div></div></div>
+        <div class="app-wrap">
+          <div class="app-main" style="max-width:640px">
+            <div class="page-title">Editor de Insight</div>
+            <div class="card card-lg space-y-4">
+              <div class="field"><label>Título do insight</label><input class="inp" value="Análise: Selic e cenário macroeconômico 2026" /></div>
+              <div class="field"><label>Conteúdo</label><textarea class="inp" rows="8">Com o Banco Central sinalizando possível corte na taxa Selic ainda no primeiro semestre de 2026, o IGCI atual de 72% reflete um consenso moderadamente otimista. Os dados do mercado de trabalho e a trajetória do IPCA serão determinantes...</textarea></div>
+              <div style="display:flex;align-items:center;gap:12px;background:var(--surface-2);border-radius:8px;padding:12px 14px"><div style="flex:1"><p style="font-size:10px;color:var(--ink-4);font-weight:700;margin-bottom:3px">Evento vinculado</p><p style="font-size:13px;font-weight:700;color:var(--ink)">O Banco Central reduzirá a Selic abaixo de 12%?</p></div><div class="igci high sm" style="display:inline-flex"><div class="igci-val">72%</div></div></div>
+              <div class="grid-2"><button class="btn btn-ghost w-full" style="justify-content:center;padding:10px">Salvar rascunho</button><button class="btn btn-primary w-full" style="justify-content:center;padding:10px">Publicar insight</button></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ████████ B4-04 API ████████ -->
+    <div id="B4-04" class="screen">
+      <div class="screen-scroll">
+        <div class="topnav"><div class="nav-in"><div class="n-logo"><span class="i">i</span><span class="t">PYSY</span></div><div class="n-links"><div class="n-link">Dashboard</div><div class="n-link active">API</div><div class="n-link">Times</div></div><div class="n-right"><div class="n-avatar">MS</div></div></div></div>
+        <div class="app-wrap">
+          <div class="app-main" style="max-width:600px">
+            <div class="page-title">API</div>
+            <div class="card card-lg space-y-4">
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px"><span style="font-size:16px">⚡</span><h2 style="font-size:15px;font-weight:700;color:var(--ink)">Chave de API</h2></div>
+              <div class="api-key-row"><span class="api-key-val">ipysy_sk_live_7f4a2b9c3d1e8f6a...</span><span class="api-icon-btn">📋</span><span class="api-icon-btn">🔄</span></div>
+              <div class="code-block">curl https://api.ipysy.com/v1/events \<br>&nbsp;&nbsp;-H "Authorization: Bearer {API_KEY}"</div>
+              <div class="grid-2" style="padding-top:14px;border-top:1px solid var(--line)">
+                <div><p style="font-size:22px;font-weight:800;color:var(--ink);letter-spacing:-.04em">12.1k</p><p style="font-size:10px;color:var(--ink-4);margin-top:2px">Chamadas hoje</p></div>
+                <div><p style="font-size:22px;font-weight:800;color:var(--ink);letter-spacing:-.04em">50k</p><p style="font-size:10px;color:var(--ink-4);margin-top:2px">Limite diário</p></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ████████ B4-05 Times ████████ -->
+    <div id="B4-05" class="screen">
+      <div class="screen-scroll">
+        <div class="topnav"><div class="nav-in"><div class="n-logo"><span class="i">i</span><span class="t">PYSY</span></div><div class="n-links"><div class="n-link">Dashboard</div><div class="n-link">API</div><div class="n-link active">Times</div></div><div class="n-right"><div class="n-avatar">MS</div></div></div></div>
+        <div class="app-wrap">
+          <div class="app-main" style="max-width:620px">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px"><div class="page-title" style="margin-bottom:0">Times</div><button class="btn btn-primary" style="font-size:12px">+ Convidar membro</button></div>
+            <div class="tbl-wrap"><table><thead><tr><th>Membro</th><th>Função</th><th>Desde</th><th></th></tr></thead><tbody>
+              <tr><td><p style="font-size:13px;font-weight:700;color:var(--ink)">Ana Beatriz</p><p style="font-size:11px;color:var(--ink-4)">ana@empresa.com</p></td><td><span class="badge badge-blue">Admin</span></td><td style="font-size:11px;color:var(--ink-4)">10 jan 2026</td><td style="text-align:right"><span style="font-size:11px;color:var(--warn);cursor:pointer;font-weight:600">Remover</span></td></tr>
+              <tr><td><p style="font-size:13px;font-weight:700;color:var(--ink)">Carlos Eduardo</p><p style="font-size:11px;color:var(--ink-4)">carlos@empresa.com</p></td><td><span class="badge badge-gray">Analista</span></td><td style="font-size:11px;color:var(--ink-4)">15 fev 2026</td><td style="text-align:right"><span style="font-size:11px;color:var(--warn);cursor:pointer;font-weight:600">Remover</span></td></tr>
+              <tr><td><p style="font-size:13px;font-weight:700;color:var(--ink)">Mariana S.</p><p style="font-size:11px;color:var(--ink-4)">mariana@empresa.com</p></td><td><span class="badge badge-gray">Analista</span></td><td style="font-size:11px;color:var(--ink-4)">01 mar 2026</td><td style="text-align:right"><span style="font-size:11px;color:var(--warn);cursor:pointer;font-weight:600">Remover</span></td></tr>
+            </tbody></table></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ████████ B5-01 Academia ████████ -->
+    <div id="B5-01" class="screen">
+      <div class="screen-scroll">
+        <div class="topnav"><div class="nav-in"><div class="n-logo"><span class="i">i</span><span class="t">PYSY</span></div><div class="n-links"><div class="n-link">Explorar</div><div class="n-link">Mercados</div><div class="n-link">Ranking</div><div class="n-link active">Academia</div></div><div class="n-right"><div class="n-avatar">AB</div></div></div></div>
+        <div class="app-wrap">
+          <div class="app-sidebar"><div class="side-card"><div class="side-section-title">Categorias</div><div class="side-link">Economia</div><div class="side-link">Política</div></div></div>
+          <div class="app-main space-y-5">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px"><span style="font-size:20px">📚</span><div class="page-title" style="margin-bottom:0">Academia IP</div></div>
+            <div class="ev-grid">
+              <div class="course-card"><div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:12px"><div style="width:38px;height:38px;border-radius:7px;background:rgba(43,122,120,.08);display:flex;align-items:center;justify-content:center;font-size:16px">▶</div><span class="badge badge-green">Iniciante</span></div><h3 style="font-size:13px;font-weight:700;color:var(--ink);margin-bottom:8px;line-height:1.4">Introdução ao pensamento probabilístico</h3><div style="font-size:11px;color:var(--ink-4)">6 aulas · 45 min</div></div>
+              <div class="course-card"><div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:12px"><div style="width:38px;height:38px;border-radius:7px;background:rgba(43,122,120,.08);display:flex;align-items:center;justify-content:center;font-size:16px">▶</div><span class="badge badge-yellow">Intermediário</span></div><h3 style="font-size:13px;font-weight:700;color:var(--ink);margin-bottom:8px;line-height:1.4">Calibração de previsões</h3><div style="font-size:11px;color:var(--ink-4)">8 aulas · 1h 10min</div></div>
+              <div class="course-card"><div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:12px"><div style="width:38px;height:38px;border-radius:7px;background:rgba(43,122,120,.08);display:flex;align-items:center;justify-content:center;font-size:16px">▶</div><span class="badge badge-yellow">Intermediário</span></div><h3 style="font-size:13px;font-weight:700;color:var(--ink);margin-bottom:8px;line-height:1.4">Brier Score na prática</h3><div style="font-size:11px;color:var(--ink-4)">5 aulas · 40 min</div></div>
+              <div class="course-card"><div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:12px"><div style="width:38px;height:38px;border-radius:7px;background:rgba(43,122,120,.08);display:flex;align-items:center;justify-content:center;font-size:16px">▶</div><span class="badge badge-red">Avançado</span></div><h3 style="font-size:13px;font-weight:700;color:var(--ink);margin-bottom:8px;line-height:1.4">Vieses cognitivos e previsões</h3><div style="font-size:11px;color:var(--ink-4)">10 aulas · 1h 30min</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ████████ B5-02 Glossário ████████ -->
+    <div id="B5-02" class="screen">
+      <div class="screen-scroll">
+        <div class="topnav"><div class="nav-in"><div class="n-logo"><span class="i">i</span><span class="t">PYSY</span></div><div class="n-links"><div class="n-link">Explorar</div><div class="n-link">Mercados</div><div class="n-link active">Academia</div></div><div class="n-right"><div class="n-avatar">AB</div></div></div></div>
+        <div class="app-wrap">
+          <div class="app-main space-y-5" style="max-width:620px">
+            <div class="page-title">Glossário</div>
+            <div style="position:relative"><svg style="position:absolute;left:12px;top:50%;transform:translateY(-50%);width:14px;height:14px;color:var(--ink-4)" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg><input class="inp" style="padding-left:36px" placeholder="Buscar termos..." /></div>
+            <div class="space-y-3">
+              <div class="card"><h3 style="font-size:13px;font-weight:800;color:var(--accent-dk);margin-bottom:5px">Brier Score</h3><p style="font-size:13px;color:var(--ink-3);line-height:1.6">Métrica de calibração que mede a precisão de previsões probabilísticas. Varia de 0 (perfeito) a 1 (pessimamente calibrado).</p></div>
+              <div class="card"><h3 style="font-size:13px;font-weight:800;color:var(--accent-dk);margin-bottom:5px">IGCI</h3><p style="font-size:13px;color:var(--ink-3);line-height:1.6">Índice de Confiança Coletiva iPYSY. Agrega previsões de múltiplos participantes em uma única probabilidade calibrada (0–100%).</p></div>
+              <div class="card"><h3 style="font-size:13px;font-weight:800;color:var(--accent-dk);margin-bottom:5px">Calibração</h3><p style="font-size:13px;color:var(--ink-3);line-height:1.6">Alinhamento entre as probabilidades previstas e as frequências observadas. Um previsor calibrado que diz "70%" está certo 70% das vezes.</p></div>
+              <div class="card"><h3 style="font-size:13px;font-weight:800;color:var(--accent-dk);margin-bottom:5px">Ghost ID</h3><p style="font-size:13px;color:var(--ink-3);line-height:1.6">Identificador anônimo (gid_xxxxxxxx) usado para proteger a privacidade do previsor em rankings e histórico público.</p></div>
+              <div class="card"><h3 style="font-size:13px;font-weight:800;color:var(--accent-dk);margin-bottom:5px">Wisdom of Crowds</h3><p style="font-size:13px;color:var(--ink-3);line-height:1.6">Fenômeno onde a média das estimativas de um grupo supera a maioria dos indivíduos, mesmo sem especialistas.</p></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ████████ B6-01 Feed Social ████████ -->
+    <div id="B6-01" class="screen">
+      <div class="screen-scroll">
+        <div class="topnav"><div class="nav-in"><div class="n-logo"><span class="i">i</span><span class="t">PYSY</span></div><div class="n-links"><div class="n-link active">Feed</div><div class="n-link">Mercados</div><div class="n-link">Ranking</div></div><div class="n-right"><div class="n-search"><svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg><span>Buscar...</span></div><div class="n-avatar">AB</div></div></div></div>
+        <div class="app-wrap">
+          <div class="app-sidebar"><div class="side-card"><div class="side-section-title">Categorias</div><div class="side-link">Economia</div><div class="side-link">Política</div></div></div>
+          <div class="app-main space-y-4" style="max-width:620px">
+            <div class="page-title">Feed social</div>
+            <div class="post">
+              <div style="display:flex;align-items:center;gap:10px"><div class="av av-sm" style="background:#FEE2E2;color:#991B1B">AB</div><div style="flex:1"><p style="font-size:12px;font-weight:700;color:var(--ink)">Ana Beatriz</p><p class="mono text-muted">gid_7f4a2b9c · 2h atrás</p></div><div class="igci high sm" style="display:inline-flex;padding:3px 8px"><div class="igci-val">72%</div></div></div>
+              <div class="post-event-ref"><p style="font-size:9px;font-weight:800;color:var(--ink-4);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">Evento</p><p style="font-size:12px;font-weight:600;color:var(--ink)">O Banco Central reduzirá a Selic abaixo de 12% até dezembro de 2026?</p></div>
+              <p style="font-size:13px;color:var(--ink-3);line-height:1.6">Com o cenário fiscal melhorando gradualmente, acredito que a probabilidade está bem calibrada nos 72%. Mas o risco-país ainda é um fator de pressão.</p>
+              <div class="post-actions"><div class="post-action">👍 14</div><div class="post-action">💬 3</div><div class="post-action" style="margin-left:auto">↗ Compartilhar</div></div>
+            </div>
+            <div class="post">
+              <div style="display:flex;align-items:center;gap:10px"><div class="av av-sm" style="background:#DBEAFE;color:#1E40AF">CE</div><div style="flex:1"><p style="font-size:12px;font-weight:700;color:var(--ink)">Carlos Eduardo</p><p class="mono text-muted">gid_3c1d9e4f · 5h atrás</p></div><div class="igci mid sm" style="display:inline-flex;padding:3px 8px"><div class="igci-val">61%</div></div></div>
+              <div class="post-event-ref"><p style="font-size:9px;font-weight:800;color:var(--ink-4);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">Evento</p><p style="font-size:12px;font-weight:600;color:var(--ink)">A inflação IPCA encerrará 2026 abaixo de 4,5%?</p></div>
+              <p style="font-size:13px;color:var(--ink-3);line-height:1.6">Os dados de serviços ainda são preocupantes. Revisando para baixo minha estimativa.</p>
+              <div class="post-actions"><div class="post-action">👍 8</div><div class="post-action">💬 1</div><div class="post-action" style="margin-left:auto">↗ Compartilhar</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ████████ B6-02 Comentários ████████ -->
+    <div id="B6-02" class="screen">
+      <div class="screen-scroll">
+        <div class="topnav"><div class="nav-in"><div class="n-logo"><span class="i">i</span><span class="t">PYSY</span></div><div class="n-links"><div class="n-link active">Feed</div></div><div class="n-right"><div class="n-avatar">AB</div></div></div></div>
+        <div class="app-wrap">
+          <div class="app-main space-y-5" style="max-width:620px">
+            <div><a style="font-size:11px;color:var(--blue-lt);cursor:pointer;font-weight:600">← Feed</a><h1 style="font-size:20px;font-weight:800;letter-spacing:-.03em;color:var(--ink);margin-top:8px">Comentários</h1><p style="font-size:13px;color:var(--ink-3);margin-top:3px">O Banco Central reduzirá a Selic abaixo de 12%?</p><div class="mt-2"><div class="igci high sm" style="display:inline-flex"><div class="igci-val">72%</div></div></div></div>
+            <div class="space-y-3">
+              <div class="comment"><div class="av av-sm" style="background:#FEE2E2;color:#991B1B">AB</div><div style="flex:1"><div style="display:flex;align-items:center;gap:8px;margin-bottom:4px"><span style="font-size:12px;font-weight:700;color:var(--ink)">Ana Beatriz</span><span style="font-size:10px;color:var(--ink-4)">1h</span></div><p style="font-size:13px;color:var(--ink-3);line-height:1.55">Com o cenário fiscal melhorando, acredito que a probabilidade está bem calibrada.</p></div></div>
+              <div class="comment"><div class="av av-sm" style="background:#DBEAFE;color:#1E40AF">CE</div><div style="flex:1"><div style="display:flex;align-items:center;gap:8px;margin-bottom:4px"><span style="font-size:12px;font-weight:700;color:var(--ink)">Carlos E.</span><span style="font-size:10px;color:var(--ink-4)">2h</span></div><p style="font-size:13px;color:var(--ink-3);line-height:1.55">Discordo parcialmente — o risco-país ainda precifica muito.</p></div></div>
+              <div class="comment"><div class="av av-sm" style="background:#D1FAE5;color:#065F46">MS</div><div style="flex:1"><div style="display:flex;align-items:center;gap:8px;margin-bottom:4px"><span style="font-size:12px;font-weight:700;color:var(--ink)">Mariana S.</span><span style="font-size:10px;color:var(--ink-4)">3h</span></div><p style="font-size:13px;color:var(--ink-3);line-height:1.55">Dados de serviços ainda preocupantes. Mantendo cautela.</p></div></div>
+            </div>
+            <div style="background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:12px;display:flex;gap:10px"><div class="av av-sm" style="background:#FEE2E2;color:#991B1B">AB</div><div style="display:flex;gap:8px;flex:1"><input class="inp" placeholder="Adicionar comentário..." style="flex:1;padding:8px 12px;font-size:13px" /><button class="btn btn-primary" style="padding:8px 12px;font-size:13px">→</button></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ████████ B6-03 Perfil Previsor ████████ -->
+    <div id="B6-03" class="screen">
+      <div class="screen-scroll">
+        <div class="topnav"><div class="nav-in"><div class="n-logo"><span class="i">i</span><span class="t">PYSY</span></div><div class="n-links"><div class="n-link active">Feed</div><div class="n-link">Rankings</div></div><div class="n-right"><div class="n-avatar">AB</div></div></div></div>
+        <div class="app-wrap">
+          <div class="app-main" style="max-width:480px">
+            <div class="card card-lg">
+              <div style="display:flex;align-items:center;gap:14px;margin-bottom:18px"><div class="av av-lg" style="background:#FEE2E2;color:#991B1B">AB</div><div><p style="font-size:15px;font-weight:800;color:var(--ink)">Ana Beatriz</p><p class="mono text-muted">gid_7f4a2b9c</p><div style="display:flex;gap:6px;margin-top:6px"><span class="badge badge-blue">Contribuidor</span><span class="badge badge-green">premium</span></div></div></div>
+              <div class="grid-3" style="padding-top:14px;border-top:1px solid var(--line);margin-bottom:14px;text-align:center">
+                <div><p style="font-size:20px;font-weight:800;color:var(--ink);letter-spacing:-.04em">142</p><p style="font-size:10px;color:var(--ink-4);margin-top:2px">Previsões</p></div>
+                <div><p style="font-size:20px;font-weight:800;color:var(--ink);letter-spacing:-.04em">73%</p><p style="font-size:10px;color:var(--ink-4);margin-top:2px">Acerto</p></div>
+                <div><p style="font-size:20px;font-weight:800;color:var(--ink);letter-spacing:-.04em">#12</p><p style="font-size:10px;color:var(--ink-4);margin-top:2px">Ranking</p></div>
+              </div>
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px"><span style="font-size:11px;font-weight:700;color:var(--ink-4)">IGCI pessoal</span><div class="igci high sm" style="display:inline-flex"><div class="igci-val">73%</div></div></div>
+              <div class="brier-wrap"><div class="brier-head"><span class="brier-lbl">Brier Score</span><div><span class="brier-score">0.187</span><span class="brier-quality good">Bom</span></div></div><div class="brier-track"><div class="brier-fill good" style="width:81%"></div></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ████████ B7-01 Admin Dashboard ████████ -->
+    <div id="B7-01" class="screen">
+      <div style="display:flex;flex-direction:column;flex:1">
+        <div class="admin-topnav">
+          <div class="n-logo"><span class="i">i</span><span class="t">PYSY</span></div>
+          <span class="admin-badge">ADMIN</span>
+          <div style="flex:1"></div>
+          <div class="n-avatar">LP</div>
+          <span style="font-size:12px;color:rgba(255,255,255,.5);margin-left:6px">Admin</span>
+        </div>
+        <div class="admin-layout">
+          <div class="admin-sidebar"><nav><div class="admin-nav-item active">📊 Dashboard</div><div class="admin-nav-item">📝 Editorial</div><div class="admin-nav-item">👥 Usuários / LGPD</div><div class="admin-nav-item">📡 Monitoramento</div></nav></div>
+          <div class="admin-main space-y-5">
+            <div class="page-title">Dashboard Admin</div>
+            <div class="grid-4">
+              <div class="kpi-card"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px"><span style="font-size:16px">👥</span><span class="kpi-delta">+8%</span></div><div class="kpi-value">12.4k</div><div class="kpi-label">Usuários ativos</div></div>
+              <div class="kpi-card"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px"><span style="font-size:16px">📊</span><span class="kpi-delta">+12%</span></div><div class="kpi-value">340</div><div class="kpi-label">Eventos publicados</div></div>
+              <div class="kpi-card"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px"><span style="font-size:16px">📈</span><span class="kpi-delta">+2pp</span></div><div class="kpi-value" style="color:#92600A">64%</div><div class="kpi-label">IGCI médio geral</div></div>
+              <div class="kpi-card"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px"><span style="font-size:16px">⚠️</span><span class="kpi-delta" style="color:#D69E2E">−2</span></div><div class="kpi-value" style="color:#D69E2E">3</div><div class="kpi-label">Alertas abertos</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ████████ B7-02 Editorial ████████ -->
+    <div id="B7-02" class="screen">
+      <div style="display:flex;flex-direction:column;flex:1">
+        <div class="admin-topnav"><div class="n-logo"><span class="i">i</span><span class="t">PYSY</span></div><span class="admin-badge">ADMIN</span><div style="flex:1"></div><div class="n-avatar">LP</div></div>
+        <div class="admin-layout">
+          <div class="admin-sidebar"><nav><div class="admin-nav-item">📊 Dashboard</div><div class="admin-nav-item active">📝 Editorial</div><div class="admin-nav-item">👥 Usuários / LGPD</div><div class="admin-nav-item">📡 Monitoramento</div></nav></div>
+          <div class="admin-main space-y-5">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px"><div class="page-title" style="margin-bottom:0">Editorial</div><button class="btn btn-primary" style="font-size:12px">+ Novo evento</button></div>
+            <div class="tbl-wrap"><table><thead><tr><th>Evento</th><th>Status</th><th style="text-align:right">IGCI</th><th></th></tr></thead><tbody>
+              <tr><td><p style="font-size:13px;font-weight:500;color:var(--ink)">O Banco Central reduzirá a Selic abaixo de 12%?</p></td><td><span class="badge badge-green">Publicado</span></td><td style="text-align:right;font-weight:800;color:var(--ink)">72%</td><td style="text-align:right"><span style="font-size:11px;color:var(--blue-lt);cursor:pointer;font-weight:600">Editar</span></td></tr>
+              <tr><td><p style="font-size:13px;font-weight:500;color:var(--ink)">O Brasil atingirá superávit primário em 2025?</p></td><td><span class="badge badge-gray">Rascunho</span></td><td style="text-align:right;font-weight:800;color:var(--ink)">38%</td><td style="text-align:right"><span style="font-size:11px;color:var(--blue-lt);cursor:pointer;font-weight:600">Editar</span></td></tr>
+              <tr><td><p style="font-size:13px;font-weight:500;color:var(--ink)">A inflação IPCA encerrará 2026 abaixo de 4,5%?</p></td><td><span class="badge badge-yellow">Em revisão</span></td><td style="text-align:right;font-weight:800;color:var(--ink)">61%</td><td style="text-align:right"><span style="font-size:11px;color:var(--blue-lt);cursor:pointer;font-weight:600">Editar</span></td></tr>
+            </tbody></table></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ████████ B7-03 Usuários LGPD ████████ -->
+    <div id="B7-03" class="screen">
+      <div style="display:flex;flex-direction:column;flex:1">
+        <div class="admin-topnav"><div class="n-logo"><span class="i">i</span><span class="t">PYSY</span></div><span class="admin-badge">ADMIN</span><div style="flex:1"></div><div class="n-avatar">LP</div></div>
+        <div class="admin-layout">
+          <div class="admin-sidebar"><nav><div class="admin-nav-item">📊 Dashboard</div><div class="admin-nav-item">📝 Editorial</div><div class="admin-nav-item active">👥 Usuários / LGPD</div><div class="admin-nav-item">📡 Monitoramento</div></nav></div>
+          <div class="admin-main space-y-5">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px"><div class="page-title" style="margin-bottom:0">Usuários / LGPD</div><button class="btn btn-ghost" style="font-size:12px">⬇ Exportar</button></div>
+            <div style="position:relative;max-width:320px"><svg style="position:absolute;left:11px;top:50%;transform:translateY(-50%);width:13px;height:13px;color:var(--ink-4)" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg><input class="inp" style="padding-left:32px;padding-top:8px;padding-bottom:8px;font-size:12px" placeholder="Buscar por nome ou ghost_id..." /></div>
+            <div class="tbl-wrap"><table><thead><tr><th>Usuário</th><th>Plano</th><th>KYC</th><th>Desde</th><th></th></tr></thead><tbody>
+              <tr><td><p style="font-size:13px;font-weight:700;color:var(--ink)">Ana Beatriz</p><p class="mono text-muted">gid_7f4a2b9c</p></td><td><span class="badge pp-premium">premium</span></td><td><span class="badge badge-green">Aprovado</span></td><td style="font-size:11px;color:var(--ink-4)">10 jan 2026</td><td style="text-align:right"><span style="font-size:11px;color:var(--warn);cursor:pointer;font-weight:600">Anonimizar</span></td></tr>
+              <tr><td><p style="font-size:13px;font-weight:700;color:var(--ink)">Carlos E.</p><p class="mono text-muted">gid_3c1d9e4f</p></td><td><span class="badge pp-free">free</span></td><td><span class="badge badge-green">Aprovado</span></td><td style="font-size:11px;color:var(--ink-4)">15 fev 2026</td><td style="text-align:right"><span style="font-size:11px;color:var(--warn);cursor:pointer;font-weight:600">Anonimizar</span></td></tr>
+              <tr><td><p style="font-size:13px;font-weight:700;color:var(--ink)">Mariana S.</p><p class="mono text-muted">gid_8a2f1b3e</p></td><td><span class="badge pp-business">business</span></td><td><span class="badge badge-green">Aprovado</span></td><td style="font-size:11px;color:var(--ink-4)">01 mar 2026</td><td style="text-align:right"><span style="font-size:11px;color:var(--warn);cursor:pointer;font-weight:600">Anonimizar</span></td></tr>
+              <tr><td><p style="font-size:13px;font-weight:700;color:var(--ink)">Pedro A.</p><p class="mono text-muted">gid_2d9c7e1a</p></td><td><span class="badge pp-free">free</span></td><td><span class="badge badge-yellow">Pendente</span></td><td style="font-size:11px;color:var(--ink-4)">20 mar 2026</td><td style="text-align:right"><span style="font-size:11px;color:var(--warn);cursor:pointer;font-weight:600">Anonimizar</span></td></tr>
+            </tbody></table></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ████████ B7-04 Monitoramento ████████ -->
+    <div id="B7-04" class="screen">
+      <div style="display:flex;flex-direction:column;flex:1">
+        <div class="admin-topnav"><div class="n-logo"><span class="i">i</span><span class="t">PYSY</span></div><span class="admin-badge">ADMIN</span><div style="flex:1"></div><div class="n-avatar">LP</div></div>
+        <div class="admin-layout">
+          <div class="admin-sidebar"><nav><div class="admin-nav-item">📊 Dashboard</div><div class="admin-nav-item">📝 Editorial</div><div class="admin-nav-item">👥 Usuários / LGPD</div><div class="admin-nav-item active">📡 Monitoramento</div></nav></div>
+          <div class="admin-main space-y-5">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px"><span style="font-size:18px">📡</span><div class="page-title" style="margin-bottom:0">Monitoramento</div></div>
+            <div class="grid-3">
+              <div class="stat-chip"><div class="val" style="color:var(--accent-dk)">99.97%</div><div class="lbl">Uptime</div></div>
+              <div class="stat-chip"><div class="val">180ms</div><div class="lbl">Latência p95</div></div>
+              <div class="stat-chip"><div class="val" style="color:#D69E2E">0.3%</div><div class="lbl">Erros/h</div></div>
+            </div>
+            <div style="background:var(--surface);border:1px solid var(--line);border-radius:var(--r);overflow:hidden">
+              <div style="display:flex;align-items:center;justify-content:space-between;padding:11px 18px;background:var(--surface-2);border-bottom:1px solid var(--line)"><h2 style="font-size:13px;font-weight:700;color:var(--ink)">Log de eventos</h2><span style="font-size:11px;color:var(--ink-4)">⏱ Tempo real</span></div>
+              <div class="log-item"><span style="color:var(--accent-dk);font-size:13px">✓</span><span style="flex:1;font-size:12px;color:var(--ink)">Evento evt-006 publicado por editorial</span><span style="font-family:var(--mono);font-size:10px;color:var(--ink-4)">14:32</span></div>
+              <div class="log-divider"></div>
+              <div class="log-item"><span style="color:#D69E2E;font-size:13px">⚠</span><span style="flex:1;font-size:12px;color:var(--ink)">Taxa de rejeição KYC acima de 15% — verificar</span><span style="font-family:var(--mono);font-size:10px;color:var(--ink-4)">13:18</span></div>
+              <div class="log-divider"></div>
+              <div class="log-item"><span style="color:var(--accent-dk);font-size:13px">✓</span><span style="flex:1;font-size:12px;color:var(--ink)">Backup automático concluído com sucesso</span><span style="font-family:var(--mono);font-size:10px;color:var(--ink-4)">11:50</span></div>
+              <div class="log-divider"></div>
+              <div class="log-item"><span style="color:var(--warn);font-size:13px">✕</span><span style="flex:1;font-size:12px;color:var(--ink)">Falha na integração API externa — retentativa em 5min</span><span style="font-family:var(--mono);font-size:10px;color:var(--ink-4)">10:22</span></div>
+              <div class="log-divider"></div>
+              <div class="log-item"><span style="color:var(--accent-dk);font-size:13px">✓</span><span style="flex:1;font-size:12px;color:var(--ink)">Deploy versão 1.4.2 concluído</span><span style="font-family:var(--mono);font-size:10px;color:var(--ink-4)">09:01</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /content -->
+</div><!-- /shell -->
+
+<div id="screen-label">B0-01</div>
+
+<script>
+function show(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.np-item').forEach(i => i.classList.remove('active'));
+  const target = document.getElementById(id);
+  if (target) target.classList.add('active');
+  // activate nav item
+  document.querySelectorAll('.np-item').forEach(i => {
+    if (i.textContent.trim().startsWith(id)) i.classList.add('active');
+  });
+  document.getElementById('screen-label').textContent = id;
+}
+</script>
+</body>
+</html>

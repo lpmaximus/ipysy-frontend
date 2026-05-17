@@ -1,0 +1,119 @@
+name: Security — Análise Semanal (Frontend)
+
+on:
+  schedule:
+    # Análise semanal: domingo às 3h UTC (1h após o backend)
+    - cron: '0 3 * * 0'
+  workflow_dispatch:
+
+jobs:
+  # ============================================
+  # AUDIT DE DEPENDÊNCIAS (npm/yarn)
+  # ============================================
+  dependency-audit:
+    name: Yarn Audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'yarn'
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Yarn audit
+        run: |
+          yarn audit --level moderate --json > audit-report.json || true
+          cat audit-report.json
+          HIGH=$(cat audit-report.json | grep -c '"severity":"high"' || echo "0")
+          CRITICAL=$(cat audit-report.json | grep -c '"severity":"critical"' || echo "0")
+          echo "High: $HIGH | Critical: $CRITICAL"
+          if [ "$CRITICAL" -gt 0 ]; then
+            echo "❌ Vulnerabilidades CRÍTICAS encontradas — verificar imediatamente!"
+            exit 1
+          fi
+        continue-on-error: true
+
+      - name: Upload audit report
+        uses: actions/upload-artifact@v4
+        with:
+          name: yarn-audit-report
+          path: audit-report.json
+          retention-days: 30
+
+  # ============================================
+  # CONTAINER SCAN (Trivy)
+  # ============================================
+  container-security:
+    name: Trivy Container Scan
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build imagem para scan
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile
+          target: production
+          push: false
+          tags: ipysy-frontend:scan
+          build-args: |
+            NUXT_PUBLIC_API_URL=https://api.ipysy.com
+            NUXT_PUBLIC_ENVIRONMENT=production
+          cache-from: type=gha
+          load: true
+
+      - name: Trivy — scan de vulnerabilidades
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ipysy-frontend:scan
+          format: 'sarif'
+          output: trivy-results.sarif
+          severity: 'HIGH,CRITICAL'
+        continue-on-error: true
+
+      - name: Upload resultados no GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: trivy-results.sarif
+        continue-on-error: true
+
+      - name: Verificar source maps no container (ADR-017)
+        run: |
+          docker run --rm --entrypoint sh ipysy-frontend:scan \
+            -c 'find /app/.output -name "*.map" | head -5 | grep -q . && echo "ERRO: source maps encontrados!" && exit 1 || echo "✅ Sem source maps"'
+        continue-on-error: true
+
+  # ============================================
+  # SUMÁRIO DE SEGURANÇA
+  # ============================================
+  security-summary:
+    name: Security Summary
+    needs: [dependency-audit, container-security]
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - name: Gerar sumário
+        run: |
+          echo "## 🔒 Análise de Segurança — Frontend" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Verificações realizadas:" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Yarn Audit (dependências NPM)" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Trivy Container Scan (imagem Docker)" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Verificação de source maps (ADR-017)" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Próximos passos:" >> $GITHUB_STEP_SUMMARY
+          echo "1. Verificar aba Security do repositório para CVEs" >> $GITHUB_STEP_SUMMARY
+          echo "2. Corrigir vulnerabilidades HIGH/CRITICAL antes do próximo deploy" >> $GITHUB_STEP_SUMMARY
+          echo "3. Executar \`yarn upgrade-interactive\` para atualizar deps seguras" >> $GITHUB_STEP_SUMMARY
