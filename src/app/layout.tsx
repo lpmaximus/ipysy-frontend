@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { Inter, Playfair_Display } from 'next/font/google'
+import { GoogleAnalytics } from '@next/third-parties/google'
 import { Providers } from '@/app/providers'
 import '@/styles/main.css'
 
@@ -56,6 +57,9 @@ export default function RootLayout({
       <body className="bg-gray-950 text-gray-100 antialiased">
         <Providers>{children}</Providers>
       </body>
+      {process.env.NEXT_PUBLIC_GA_ID && (
+        <GoogleAnalytics gaId={process.env.NEXT_PUBLIC_GA_ID} />
+      )}
     </html>
   )
 }
