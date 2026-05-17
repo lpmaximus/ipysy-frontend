@@ -154,12 +154,12 @@ jobs:
 
       - name: Deploy .env.prod no servidor
         env:
-          FRONTEND_PROD_ENV: ${{ secrets.FRONTEND_PROD_ENV }}
+          PROD_ENV: ${{ secrets.PROD_ENV }}
         run: |
-          if [ -z "$FRONTEND_PROD_ENV" ]; then
-            echo "⚠️ FRONTEND_PROD_ENV não configurado — pulando .env.prod"
+          if [ -z "$PROD_ENV" ]; then
+            echo "⚠️ PROD_ENV não configurado — pulando .env.prod"
           else
-            echo "$FRONTEND_PROD_ENV" | tr -d '\r' | \
+            echo "$PROD_ENV" | tr -d '\r' | \
               ssh ${{ env.HETZNER_USER }}@${{ env.HETZNER_HOST }} \
               "cat > ${{ env.HETZNER_DEPLOY_DIR }}/.env.prod && chmod 600 ${{ env.HETZNER_DEPLOY_DIR }}/.env.prod"
             echo "✅ .env.prod deployado"
