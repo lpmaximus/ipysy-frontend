@@ -1,0 +1,1124 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>iPYSY — Inteligência Preditiva Coletiva</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Playfair+Display:ital,wght@0,700;0,800;1,700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --ink:#0F1923; --ink-2:#263545; --ink-3:#607080; --ink-4:#90A0B0;
+  --surface:#FFFFFF; --surface-2:#F7F7F5; --surface-3:#EEECEA;
+  --line:#E2E0DC; --line-2:#CCCAC5;
+  --teal:#1E6B68; --teal-dk:#124442; --teal-lt:#2B9490; --teal-bg:#EAF5F4;
+  --gold:#9A7B2E; --gold-lt:#C9A84C; --gold-bg:#FBF6E8;
+  --red:#B03030; --red-bg:rgba(176,48,48,.07);
+  --navy:#0A1628; --navy-2:#142040;
+  --sans:'Inter',system-ui,-apple-system,sans-serif;
+  --serif:'Playfair Display','Georgia',serif;
+  --w:1240px; --r:10px;
+  --sh:0 1px 3px rgba(15,25,35,.06),0 1px 2px rgba(15,25,35,.04);
+  --sh-hover:0 8px 24px rgba(15,25,35,.10);
+}
+html{font-size:15px;-webkit-font-smoothing:antialiased;scroll-behavior:smooth;overflow-x:hidden;}
+body{font-family:var(--sans);color:var(--ink);background:var(--surface-2);line-height:1.6;overflow-x:hidden;max-width:100%;}
+a{text-decoration:none;color:inherit}
+button{font-family:var(--sans);cursor:pointer;border:none;outline:none}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+@keyframes ticker{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes barGrow{from{width:0}to{width:var(--w-final)}}
+@keyframes flamePulse{0%,100%{transform:scale(1)}50%{transform:scale(1.2)}}
+
+/* ─── LIVE DOT ─── */
+.live-dot{width:6px;height:6px;border-radius:50%;background:#3ABFA0;animation:pulse 1.8s infinite;display:inline-block}
+
+/* ─── NAVBAR ─── */
+.navbar{background:var(--surface);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:100;transition:box-shadow .2s;}
+.nav-in{max-width:var(--w);margin:0 auto;padding:0 24px;height:52px;display:flex;align-items:center;gap:16px;}
+.n-logo{font-size:20px;font-weight:900;letter-spacing:-.04em;flex-shrink:0;cursor:pointer;}
+.n-logo .i{color:var(--teal-lt)} .n-logo .t{color:var(--ink)}
+.n-search{flex:1;max-width:460px;display:flex;align-items:center;gap:8px;background:var(--surface-2);border:1.5px solid var(--line);border-radius:999px;padding:0 14px;height:36px;transition:border-color .15s;cursor:text;}
+.n-search:focus-within{border-color:var(--teal-lt)}
+.n-search svg{color:var(--ink-4);flex-shrink:0}
+.n-search input{flex:1;border:none;background:transparent;font-size:13px;color:var(--ink);outline:none}
+.n-search input::placeholder{color:var(--ink-4)}
+.n-links{display:flex;align-items:center;gap:0;margin-left:8px}
+.n-link{padding:6px 12px;border-radius:6px;font-size:13px;font-weight:500;color:var(--ink-3);cursor:pointer;transition:all .15s;white-space:nowrap;}
+.n-link:hover{color:var(--ink);background:var(--surface-2)}
+.n-link.active{color:var(--ink);font-weight:700}
+.n-right{display:flex;align-items:center;gap:8px;margin-left:auto;flex-shrink:0}
+.btn-ghost{padding:6px 15px;border-radius:7px;font-size:13px;font-weight:600;color:var(--ink-2);background:transparent;border:1.5px solid var(--line);transition:all .15s;}
+.btn-ghost:hover{border-color:var(--ink-3);color:var(--ink)}
+.btn-accent{padding:7px 16px;border-radius:7px;font-size:13px;font-weight:700;color:#fff;background:var(--teal);transition:background .15s;}
+.btn-accent:hover{background:var(--teal-dk)}
+
+/* ─── STREAK BADGE ─── */
+.streak-pill{display:flex;align-items:center;gap:5px;background:var(--gold-bg);border:1.5px solid rgba(154,123,46,.25);border-radius:999px;padding:5px 12px;font-size:12px;font-weight:800;color:var(--gold);cursor:pointer;transition:all .15s;}
+.streak-pill:hover{background:#f5edcc;border-color:var(--gold-lt)}
+.streak-flame{animation:flamePulse 1.4s ease-in-out infinite;display:inline-block}
+.streak-pill .days{font-size:10px;font-weight:600;color:var(--gold);opacity:.75}
+
+/* ─── CATEGORY TABS ─── */
+.catbar{background:var(--surface);border-bottom:1px solid var(--line);position:sticky;top:52px;z-index:99;overflow-x:auto;scrollbar-width:none}
+.catbar::-webkit-scrollbar{display:none}
+.catbar-in{max-width:var(--w);margin:0 auto;padding:0 24px;height:40px;display:flex;align-items:center;gap:0;}
+.cat-btn{display:flex;align-items:center;gap:5px;padding:0 14px;height:100%;font-size:13px;font-weight:500;color:var(--ink-3);background:transparent;border:none;border-bottom:2px solid transparent;cursor:pointer;transition:all .15s;white-space:nowrap;margin-bottom:-1px;}
+.cat-btn:hover{color:var(--ink)}
+.cat-btn.active{color:var(--ink);font-weight:700;border-bottom-color:var(--teal)}
+.cat-cnt{font-size:10px;color:var(--ink-4);background:var(--surface-3);padding:1px 5px;border-radius:10px;font-weight:700}
+.cat-btn.active .cat-cnt{background:var(--teal-bg);color:var(--teal)}
+
+/* ─── HERO ─── */
+.hero-h1{font-family:var(--sans);font-size:36px;font-weight:900;line-height:1.1;letter-spacing:-.03em;color:var(--ink);margin-bottom:12px;}
+.hero-sub{font-size:14px;color:var(--ink-3);line-height:1.65;margin-bottom:20px;max-width:480px}
+.hero-cta{display:flex;align-items:center;gap:10px;margin-bottom:24px}
+.btn-primary{padding:10px 22px;border-radius:8px;font-size:13px;font-weight:700;color:#fff;background:var(--teal);border:none;cursor:pointer;transition:background .15s;}
+.btn-primary:hover{background:var(--teal-dk)}
+.btn-outline{padding:10px 18px;border-radius:8px;font-size:13px;font-weight:600;color:var(--ink-2);background:transparent;border:1.5px solid var(--line);cursor:pointer;transition:all .15s;}
+.btn-outline:hover{border-color:var(--ink-3);color:var(--ink)}
+.feat-event{border:1.5px solid var(--line);border-radius:var(--r);overflow:hidden;background:var(--surface);box-shadow:var(--sh);}
+.fe-header{background:var(--navy);padding:12px 16px;display:flex;align-items:center;justify-content:space-between;}
+.fe-label{font-size:9px;font-weight:800;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:.1em}
+.fe-live{display:flex;align-items:center;gap:5px;font-size:9px;font-weight:800;color:#3ABFA0;text-transform:uppercase;letter-spacing:.06em}
+.fe-body{padding:16px}
+.fe-question{font-family:var(--sans);font-size:17px;font-weight:700;color:var(--ink);line-height:1.38;margin-bottom:8px;}
+.fe-opts{display:flex;flex-direction:column;gap:7px;margin-bottom:14px}
+.fe-opt{display:grid;grid-template-columns:20px 1fr 52px 40px;align-items:center;gap:8px;font-size:12px}
+.fe-opt-name{font-weight:600;color:var(--ink-2)}
+.fe-opt-bar-wrap{height:5px;background:var(--surface-3);border-radius:99px;overflow:hidden}
+.fe-opt-bar{height:100%;border-radius:99px;transition:width .4s}
+.fe-opt-pct{font-size:13px;font-weight:800;color:var(--ink);text-align:right}
+.fe-yn{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:14px 0}
+.fe-btn-sim{padding:10px 0;border-radius:8px;font-size:14px;font-weight:700;background:rgba(30,107,104,.1);color:var(--teal);border:1.5px solid rgba(30,107,104,.25);cursor:pointer;}
+.fe-btn-sim:hover{background:rgba(30,107,104,.18);border-color:var(--teal)}
+.fe-btn-nao{padding:10px 0;border-radius:8px;font-size:14px;font-weight:700;background:rgba(176,48,48,.08);color:var(--red);border:1.5px solid rgba(176,48,48,.2);cursor:pointer;}
+.fe-btn-nao:hover{background:rgba(176,48,48,.15);border-color:var(--red)}
+.fe-articles{border-top:1px solid var(--line);padding-top:10px;margin-top:10px}
+.fe-articles-label{font-size:9px;font-weight:800;color:var(--ink-4);text-transform:uppercase;letter-spacing:.08em;margin-bottom:7px}
+.fe-article{display:flex;gap:8px;align-items:flex-start;padding:5px 0;cursor:pointer}
+.fe-art-src{font-size:9px;font-weight:700;color:var(--ink-4);white-space:nowrap;background:var(--surface-2);border:1px solid var(--line);border-radius:4px;padding:2px 5px;flex-shrink:0;}
+.fe-art-title{font-size:11px;font-weight:500;color:var(--ink-2);line-height:1.4;}
+.fe-vol{display:flex;align-items:center;justify-content:space-between;font-size:10px;color:var(--ink-4);margin-top:10px;padding-top:8px;border-top:1px solid var(--line)}
+.fe-feed{border-top:1px solid var(--line);padding-top:8px}
+.fe-feed-label{font-size:9px;font-weight:800;color:var(--ink-4);text-transform:uppercase;letter-spacing:.08em;margin-bottom:5px}
+.fe-feed-item{display:flex;align-items:center;gap:6px;padding:3px 0;font-size:11px}
+.fe-av{width:20px;height:20px;border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:7px;font-weight:800;flex-shrink:0}
+.fe-user{font-weight:600;color:var(--ink-2);flex:1}
+.fe-val.y{color:var(--teal)} .fe-val.n{color:var(--red)}
+.hero-in{max-width:var(--w);margin:0 auto;display:grid;grid-template-columns:1fr 340px;gap:32px;align-items:start;}
+.hero-right{display:flex;flex-direction:column;gap:0;border-left:1px solid var(--line);margin-left:0;padding-left:24px;height:100%;}
+.hr-block{padding-bottom:16px;border-bottom:1px solid var(--line)}
+.hr-block:last-child{border-bottom:none;padding-bottom:0;padding-top:16px}
+.hr-head{font-size:10px;font-weight:800;color:var(--ink-4);text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px;display:flex;justify-content:space-between;}
+.rn-item{padding:8px 0;border-bottom:1px solid var(--line);cursor:pointer;}
+.rn-src{font-size:9px;font-weight:700;color:var(--ink-4);text-transform:uppercase;margin-bottom:2px}
+.rn-title{font-size:12px;font-weight:600;color:var(--ink);line-height:1.38;}
+.rn-tag{font-size:9px;color:var(--teal);font-weight:700;}
+.re-item{display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--line);cursor:pointer;}
+.re-n{font-size:11px;font-weight:900;color:var(--ink-4);width:14px;}
+.re-body{flex:1;min-width:0}
+.re-q{font-size:11px;font-weight:600;color:var(--ink-2);}
+.re-right{text-align:right;flex-shrink:0}
+.re-pct{font-size:13px;font-weight:800;color:var(--ink);line-height:1}
+.re-delta{font-size:9px;font-weight:800}
+.re-delta.up{color:var(--teal)} .re-delta.dn{color:var(--red)}
+
+/* ─── MORNING BRIEFING ─── */
+.briefing{background:var(--navy);border-bottom:1px solid rgba(255,255,255,.06);padding:18px 0;width:100%;max-width:100%;display:block;box-sizing:border-box;}
+.briefing-in{max-width:1240px;margin:0 auto;padding:0 24px;}
+.briefing-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
+.briefing-title{font-size:11px;font-weight:800;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:.1em;display:flex;align-items:center;gap:8px;}
+.briefing-title .bdate{color:rgba(255,255,255,.8);font-weight:700;text-transform:none;letter-spacing:0;font-size:12px;}
+.briefing-upd{font-size:10px;color:rgba(255,255,255,.3)}
+.briefing-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;}
+.brf-card{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:14px 16px;cursor:pointer;transition:background .15s;}
+.brf-card:hover{background:rgba(255,255,255,.09)}
+.brf-label{font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px;display:flex;align-items:center;gap:5px;}
+.brf-label.move{color:#3ABFA0} .brf-label.res{color:var(--gold-lt)} .brf-label.hot{color:#F87171}
+.brf-q{font-size:13px;font-weight:700;color:#fff;line-height:1.35;margin-bottom:6px;}
+.brf-meta{font-size:11px;color:rgba(255,255,255,.4)}
+.brf-delta{display:inline-flex;align-items:center;gap:3px;font-size:12px;font-weight:800;padding:2px 7px;border-radius:5px;}
+.brf-delta.up{color:#3ABFA0;background:rgba(58,191,160,.12)} .brf-delta.dn{color:#F87171;background:rgba(248,113,113,.12)}
+
+/* ─── PERGUNTA DO DIA ─── */
+.pdd{background:linear-gradient(135deg,var(--teal-dk) 0%,#1a5a6e 100%);border-bottom:1px solid var(--line);padding:28px 0;width:100%;max-width:100%;display:block;box-sizing:border-box;}
+.pdd-in{max-width:1240px;margin:0 auto;padding:0 24px;display:grid;grid-template-columns:1fr 320px;gap:32px;align-items:center;}
+.pdd-badge{display:inline-flex;align-items:center;gap:6px;font-size:10px;font-weight:800;color:rgba(255,255,255,.6);text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px;}
+.pdd-badge-dot{width:7px;height:7px;border-radius:50%;background:#3ABFA0;animation:pulse 1.8s infinite}
+.pdd-question{font-family:var(--serif);font-size:26px;font-weight:700;color:#fff;line-height:1.25;margin-bottom:10px;}
+.pdd-sub{font-size:12px;color:rgba(255,255,255,.5);margin-bottom:18px;}
+.pdd-btns{display:grid;grid-template-columns:1fr 1fr;gap:10px;max-width:340px;}
+.pdd-btn{padding:12px 0;border-radius:9px;font-size:14px;font-weight:700;cursor:pointer;transition:all .18s;border:2px solid transparent;text-align:center;}
+.pdd-btn.sim{background:rgba(58,191,160,.18);color:#3ABFA0;border-color:rgba(58,191,160,.35);}
+.pdd-btn.sim:hover,.pdd-btn.sim.selected{background:rgba(58,191,160,.30);border-color:#3ABFA0}
+.pdd-btn.nao{background:rgba(248,113,113,.15);color:#F87171;border-color:rgba(248,113,113,.3);}
+.pdd-btn.nao:hover,.pdd-btn.nao.selected{background:rgba(248,113,113,.26);border-color:#F87171}
+.pdd-right{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:18px;}
+.pdd-timer-label{font-size:9px;font-weight:800;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px;}
+.pdd-countdown{display:flex;gap:10px;margin-bottom:16px;}
+.pdd-tc{text-align:center;}
+.pdd-tc .num{font-size:28px;font-weight:900;color:#fff;line-height:1;display:block;}
+.pdd-tc .lbl{font-size:9px;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:.08em;}
+.pdd-sep{font-size:24px;font-weight:900;color:rgba(255,255,255,.25);align-self:flex-start;margin-top:2px;}
+.pdd-stats{display:flex;flex-direction:column;gap:6px;}
+.pdd-stat-row{display:flex;align-items:center;justify-content:space-between;font-size:12px;}
+.pdd-stat-row .label{color:rgba(255,255,255,.45)}
+.pdd-stat-row .value{font-weight:700;color:#fff}
+.pdd-bar-wrap{height:5px;background:rgba(255,255,255,.1);border-radius:99px;overflow:hidden;margin-top:3px;}
+.pdd-bar-sim{height:100%;border-radius:99px;background:linear-gradient(90deg,#2B9490,#3ABFA0);transition:width .5s}
+.pdd-participants{font-size:11px;color:rgba(255,255,255,.35);margin-top:12px;padding-top:12px;border-top:1px solid rgba(255,255,255,.08);text-align:center;}
+
+/* ─── NOVO CARROSSEL ─── */
+.nc-section{background:var(--surface);padding:28px 0 36px;border-bottom:1px solid var(--line);overflow:hidden;}
+.nc-carousel-container{max-width:var(--w);margin:0 auto;padding:0;position:relative;overflow:hidden;}
+.nc-header-row{display:flex;align-items:center;justify-content:space-between;padding-bottom:20px;padding:0 24px 20px;}
+.nc-hl{font-size:12px;font-weight:800;color:var(--ink-4);text-transform:uppercase;letter-spacing:.08em;}
+.nc-nav{display:flex;gap:8px;}
+.nc-btn{width:40px;height:40px;border-radius:50%;border:1.5px solid var(--line);background:var(--surface);color:var(--ink-3);font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;}
+.nc-btn:hover:not(:disabled){border-color:var(--teal);color:var(--teal);background:var(--teal-bg)}
+.nc-btn:disabled{opacity:.3;cursor:default}
+.nc-carousel{overflow:hidden;position:relative;margin:0;}
+.nc-track{display:flex;gap:2px;transition:transform .5s cubic-bezier(.2,.9,.4,1.1);will-change:transform;padding:20px 0 30px;}
+.nc-slide{flex:0 0 calc(100% / 1.8);border-radius:0;overflow:hidden;background:var(--surface);border:1px solid var(--line);box-shadow:var(--sh);cursor:pointer;transition:filter .4s,opacity .4s,transform .4s,box-shadow .4s;filter:blur(4px);opacity:.5;transform:scale(.92);}
+.nc-slide.active{filter:blur(0);opacity:1;transform:scale(1);box-shadow:var(--sh-hover);border-color:var(--teal-lt)}
+.nc-slide-img{width:100%;height:350px;object-fit:cover;display:block;background:var(--surface-3)}
+.nc-slide-body{padding:12px 16px 16px}
+.nc-badge{display:inline-flex;align-items:center;gap:5px;font-size:10px;font-weight:800;color:var(--teal);text-transform:uppercase;background:var(--teal-bg);padding:3px 9px;border-radius:999px;margin-bottom:9px;}
+.nc-badge.pat{color:var(--gold);background:var(--gold-bg)}
+.nc-slide-title{font-family:var(--serif);font-size:20px;font-weight:700;color:var(--ink);line-height:1.3;margin-bottom:7px;}
+.nc-slide-summary{font-size:13px;color:var(--ink-3);line-height:1.62;margin-bottom:14px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+.nc-slide-foot{display:flex;align-items:center;justify-content:space-between;font-size:11px;color:var(--ink-4);}
+.nc-slide-cta{font-size:12px;font-weight:700;color:var(--teal);display:flex;align-items:center;gap:3px;}
+.nc-dots{display:flex;justify-content:center;gap:10px;padding:8px 0 20px;}
+.nc-dot{width:8px;height:8px;border-radius:50%;background:var(--line-2);border:none;padding:0;cursor:pointer;transition:all .2s;}
+.nc-dot.active{background:var(--teal);width:28px;border-radius:4px;}
+
+/* ─── MAIN GRID ─── */
+.main-wrap{max-width:var(--w);margin:0 auto;padding:28px 24px 0}
+.main-grid{display:grid;grid-template-columns:1fr 300px;gap:24px;align-items:start}
+.section-hd{display:flex;align-items:center;justify-content:space-between;padding-bottom:10px;border-bottom:1px solid var(--line);margin-bottom:16px;}
+.section-hd h2{font-size:12px;font-weight:800;color:var(--ink);text-transform:uppercase;letter-spacing:.06em}
+.section-hd .more{font-size:11px;font-weight:600;color:var(--teal);cursor:pointer}
+.ev-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:24px}
+.ev{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px;cursor:pointer;transition:all .18s;box-shadow:var(--sh);}
+.ev:hover{border-color:var(--teal-lt);box-shadow:var(--sh-hover);transform:translateY(-1px)}
+.ev-cat{font-size:9px;font-weight:800;color:var(--teal);text-transform:uppercase;margin-bottom:4px;display:flex;justify-content:space-between;}
+.ev-title{font-size:13px;font-weight:700;color:var(--ink);line-height:1.38;margin-bottom:10px;}
+.ev-spark{display:flex;align-items:flex-end;gap:2px;height:22px;margin-bottom:7px}
+.ev-spark .b{flex:1;border-radius:2px;background:var(--teal);opacity:.35}
+.ev-bar-row{display:flex;justify-content:space-between;font-size:11px;font-weight:700;margin-bottom:3px}
+.ev-bar-row .y{color:var(--teal)} .ev-bar-row .n{color:var(--red)}
+.ev-track{height:4px;border-radius:99px;background:rgba(176,48,48,.1);overflow:hidden;margin-bottom:7px}
+.ev-fill{height:100%;border-radius:99px;background:linear-gradient(90deg,var(--teal),var(--teal-lt))}
+.ev-foot{display:flex;justify-content:space-between;font-size:10px;color:var(--ink-4)}
+.trend.up{color:var(--teal)} .trend.dn{color:var(--red)}
+.ev-news{font-size:10px;color:var(--ink-3);background:var(--surface-2);border-radius:4px;padding:4px 7px;margin-top:7px;border-left:2px solid #F59E0B}
+
+/* ─── DESAFIO RÁPIDO ─── */
+.dq-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);overflow:hidden;margin-bottom:16px;box-shadow:var(--sh);}
+.dq-head{background:linear-gradient(90deg,var(--navy),var(--navy-2));padding:12px 16px;display:flex;align-items:center;justify-content:space-between;}
+.dq-badge{display:flex;align-items:center;gap:6px;font-size:10px;font-weight:800;color:#3ABFA0;text-transform:uppercase;letter-spacing:.08em;}
+.dq-timer{font-size:11px;font-weight:700;color:rgba(255,255,255,.45)}
+.dq-body{padding:16px}
+.dq-intro{font-size:12px;color:var(--ink-3);margin-bottom:14px;}
+.dq-q{background:var(--surface-2);border:1px solid var(--line);border-radius:8px;padding:12px 14px;margin-bottom:8px;cursor:pointer;transition:border-color .15s;}
+.dq-q:hover{border-color:var(--teal-lt)}
+.dq-q-top{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:8px;}
+.dq-q-text{font-size:13px;font-weight:600;color:var(--ink);line-height:1.38;flex:1}
+.dq-q-num{font-size:10px;font-weight:800;color:var(--ink-4);background:var(--surface-3);border-radius:4px;padding:2px 6px;flex-shrink:0;margin-top:2px;}
+.dq-q-btns{display:grid;grid-template-columns:1fr 1fr;gap:6px;}
+.dq-sim{padding:6px 0;border-radius:6px;font-size:12px;font-weight:700;background:rgba(30,107,104,.08);color:var(--teal);border:1px solid rgba(30,107,104,.2);cursor:pointer;transition:all .15s;}
+.dq-sim:hover,.dq-sim.sel{background:rgba(30,107,104,.18);border-color:var(--teal)}
+.dq-nao{padding:6px 0;border-radius:6px;font-size:12px;font-weight:700;background:rgba(176,48,48,.06);color:var(--red);border:1px solid rgba(176,48,48,.18);cursor:pointer;transition:all .15s;}
+.dq-nao:hover,.dq-nao.sel{background:rgba(176,48,48,.14);border-color:var(--red)}
+.dq-foot{display:flex;align-items:center;justify-content:space-between;padding-top:12px;border-top:1px solid var(--line);margin-top:4px;}
+.dq-prog{font-size:11px;color:var(--ink-4)}
+.dq-prog strong{color:var(--teal)}
+
+/* ─── EXISTING CHALLENGE ─── */
+.challenge{background:var(--gold-bg);border:1px solid rgba(154,123,46,.2);border-left:3px solid var(--gold-lt);border-radius:var(--r);padding:16px 18px;margin-bottom:22px;}
+.ch-badge{display:flex;align-items:center;gap:5px;font-size:9px;font-weight:800;color:var(--gold);text-transform:uppercase;margin-bottom:5px}
+.ch-title{font-size:15px;font-weight:800;color:var(--ink);margin-bottom:3px;}
+.ch-sub{font-size:12px;color:var(--ink-3);margin-bottom:12px;}
+.ch-stats{display:flex;gap:20px;margin-bottom:12px}
+.ch-stat .n{font-size:17px;font-weight:800;color:var(--ink);line-height:1;}
+.ch-stat .l{font-size:9px;color:var(--ink-4);text-transform:uppercase;}
+.ch-foot{display:flex;align-items:center;gap:12px}
+.timer{font-size:11px;color:var(--ink-4)}
+
+/* ─── RESOLUÇÕES DE HOJE ─── */
+.res-section{margin-bottom:24px;}
+.res-grid{display:flex;flex-direction:column;gap:8px;}
+.res-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px;display:flex;align-items:center;gap:14px;cursor:pointer;transition:all .18s;box-shadow:var(--sh);}
+.res-card:hover{border-color:var(--teal-lt);box-shadow:var(--sh-hover)}
+.res-verdict{width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;}
+.res-verdict.sim{background:rgba(30,107,104,.1)}
+.res-verdict.nao{background:rgba(176,48,48,.08)}
+.res-body{flex:1;min-width:0}
+.res-q{font-size:13px;font-weight:700;color:var(--ink);line-height:1.38;margin-bottom:3px;}
+.res-meta{font-size:10px;color:var(--ink-4)}
+.res-right{text-align:right;flex-shrink:0}
+.res-outcome{font-size:13px;font-weight:800}
+.res-outcome.sim{color:var(--teal)} .res-outcome.nao{color:var(--red)}
+.res-acc{font-size:10px;color:var(--ink-4);margin-top:2px;}
+.res-badge-acertei{display:inline-flex;align-items:center;gap:4px;font-size:9px;font-weight:800;color:var(--teal);background:var(--teal-bg);border-radius:99px;padding:2px 8px;margin-top:4px;}
+
+/* ─── RADAR DE CONSENSO ─── */
+.radar-section{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px 18px;margin-bottom:24px;box-shadow:var(--sh);}
+.radar-grid{display:flex;flex-direction:column;gap:10px;margin-top:12px;}
+.radar-row{display:grid;grid-template-columns:1fr 44px 80px;align-items:center;gap:10px;}
+.radar-q{font-size:12px;font-weight:600;color:var(--ink-2);line-height:1.3;}
+.radar-pct{font-size:14px;font-weight:800;color:var(--ink);text-align:right;}
+.radar-bar-wrap{height:6px;background:var(--surface-3);border-radius:99px;overflow:hidden;grid-column:1/-1;margin-top:-6px;}
+.radar-bar{height:100%;border-radius:99px;transition:width 1.2s cubic-bezier(.4,0,.2,1);}
+.radar-bar.up{background:linear-gradient(90deg,var(--teal),var(--teal-lt))}
+.radar-bar.dn{background:linear-gradient(90deg,#B03030,#EF4444)}
+.radar-delta{font-size:10px;font-weight:800;padding:2px 6px;border-radius:4px;}
+.radar-delta.up{color:var(--teal);background:var(--teal-bg)} .radar-delta.dn{color:var(--red);background:var(--red-bg)}
+
+/* ─── SIDEBAR CARDS ─── */
+.side-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);overflow:hidden;margin-bottom:12px;box-shadow:var(--sh);}
+.sc-head{display:flex;align-items:center;justify-content:space-between;padding:11px 14px;border-bottom:1px solid var(--line);background:var(--surface-2);}
+.sc-title{font-size:11px;font-weight:800;color:var(--ink);text-transform:uppercase;}
+.sc-more{font-size:11px;font-weight:600;color:var(--teal);cursor:pointer}
+.sc-body{padding:0 14px}
+.pv{display:flex;align-items:flex-start;gap:8px;padding:9px 0;border-bottom:1px solid var(--line);}
+.pv-rank{width:18px;height:18px;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:900;flex-shrink:0;}
+.pv-rank.g{background:var(--gold-bg);color:var(--gold)}
+.pv-rank.s{background:var(--surface-3);color:var(--ink-3)}
+.pv-rank.b{background:rgba(176,100,48,.1);color:#9A5030}
+.av{width:26px;height:26px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:800;flex-shrink:0;}
+.pv-name{font-size:12px;font-weight:700;color:var(--ink)}
+.pv-level{font-size:8px;font-weight:800;padding:2px 5px;border-radius:3px;display:inline-block;}
+.pv-level.elite{background:var(--gold-bg);color:var(--gold)}
+.mini-track{display:flex;align-items:flex-end;gap:2px;height:12px;margin:3px 0}
+.mini-track .b{width:7px;border-radius:1px}
+.mini-track .b.g{background:var(--teal)} .mini-track .b.o{background:var(--red)}
+.pv-acc{font-size:10px;color:var(--ink-4)}
+.sn{padding:9px 0;border-bottom:1px solid var(--line);}
+.sn-src{font-size:9px;font-weight:700;color:var(--ink-4);text-transform:uppercase;margin-bottom:2px}
+.sn-title{font-size:12px;font-weight:600;color:var(--ink);line-height:1.38;}
+.sn-tag{font-size:9px;color:var(--teal);font-weight:700;}
+.promo-card{background:linear-gradient(135deg,var(--navy) 0%,var(--teal-dk) 100%);border-radius:var(--r);padding:20px;color:#fff;margin-bottom:12px;}
+.promo-eyebrow{font-size:9px;font-weight:800;color:rgba(255,255,255,.45);text-transform:uppercase;margin-bottom:8px}
+.promo-title{font-size:15px;font-weight:800;margin-bottom:8px;}
+.promo-sub{font-size:11px;color:rgba(255,255,255,.55);margin-bottom:14px}
+.promo-bullets{display:flex;flex-direction:column;gap:6px;margin-bottom:16px}
+.promo-bullet{display:flex;align-items:center;gap:7px;font-size:11px;color:rgba(255,255,255,.7)}
+.promo-bullet-dot{width:5px;height:5px;border-radius:50%;background:var(--teal-lt);}
+.promo-btn{width:100%;padding:10px;border-radius:7px;font-size:12px;font-weight:700;background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.2);cursor:pointer;}
+.promo-btn:hover{background:rgba(255,255,255,.25)}
+.tr{display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--line);}
+.tr-n{font-size:11px;font-weight:900;color:var(--ink-4);width:14px;}
+.tr-body{flex:1}
+.tr-q{font-size:12px;font-weight:600;color:var(--ink-2);}
+.tr-right{text-align:right}
+.tr-pct{font-size:13px;font-weight:800;color:var(--ink);}
+.tr-delta{font-size:9px;font-weight:800}
+.tr-delta.up{color:var(--teal)} .tr-delta.dn{color:var(--red)}
+
+/* ─── SUAS POSIÇÕES HOJE ─── */
+.pos-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);overflow:hidden;margin-bottom:12px;box-shadow:var(--sh);}
+.pos-head{background:linear-gradient(90deg,var(--teal-bg),#fff);padding:11px 14px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;}
+.pos-title{font-size:11px;font-weight:800;color:var(--teal);text-transform:uppercase;}
+.pos-body{padding:0 14px}
+.pos-item{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--line);}
+.pos-icon{width:30px;height:30px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;}
+.pos-icon.up{background:var(--teal-bg)} .pos-icon.dn{background:var(--red-bg)} .pos-icon.neu{background:var(--surface-3)}
+.pos-info{flex:1;min-width:0}
+.pos-q{font-size:11px;font-weight:600;color:var(--ink);line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.pos-bet{font-size:10px;color:var(--ink-4)}
+.pos-right{text-align:right;flex-shrink:0}
+.pos-now{font-size:13px;font-weight:800;color:var(--ink);line-height:1;}
+.pos-chg{font-size:9px;font-weight:800;}
+.pos-chg.up{color:var(--teal)} .pos-chg.dn{color:var(--red)} .pos-chg.neu{color:var(--ink-4)}
+
+/* ─── PLACAR DIÁRIO ─── */
+.placar-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);overflow:hidden;margin-bottom:12px;box-shadow:var(--sh);}
+.placar-head{background:var(--gold-bg);padding:11px 14px;border-bottom:1px solid rgba(154,123,46,.2);display:flex;align-items:center;justify-content:space-between;}
+.placar-title{font-size:11px;font-weight:800;color:var(--gold);text-transform:uppercase;}
+.placar-body{padding:0 14px}
+.placar-item{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--line);}
+.pl-rank{width:18px;height:18px;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:900;flex-shrink:0;}
+.pl-rank.g{background:var(--gold-bg);color:var(--gold)} .pl-rank.s{background:var(--surface-3);color:var(--ink-3)} .pl-rank.b{background:rgba(176,100,48,.1);color:#9A5030}
+.pl-av{width:24px;height:24px;border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:800;flex-shrink:0;}
+.pl-info{flex:1;min-width:0}
+.pl-name{font-size:12px;font-weight:700;color:var(--ink)}
+.pl-pts{font-size:10px;color:var(--ink-4)}
+.pl-right{text-align:right;flex-shrink:0}
+.pl-score{font-size:13px;font-weight:800;color:var(--teal)}
+.pl-change{font-size:9px;font-weight:800;color:var(--teal)}
+.placar-footer{padding:10px 14px;font-size:10px;color:var(--ink-4);border-top:1px solid var(--line);background:var(--surface-2);}
+
+/* ─── FOOTER ─── */
+.footer{background:var(--surface);border-top:1px solid var(--line);padding:40px 24px 24px}
+.footer-in{max-width:var(--w);margin:0 auto}
+.footer-brand{margin-bottom:28px}
+.ft-logo{font-size:20px;font-weight:900;letter-spacing:-.04em;margin-bottom:4px}
+.ft-logo .i{color:var(--teal-lt)} .ft-logo .t{color:var(--ink)}
+.ft-tagline{font-size:13px;color:var(--ink-3);font-weight:500}
+.footer-divider{border:none;border-top:1px solid var(--line);margin:0 0 18px}
+.footer-bottom{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px}
+.ft-social{display:flex;gap:10px;align-items:center}
+.ft-social-icon{font-size:16px;color:var(--ink-3);cursor:pointer;transition:color .15s}
+.ft-social-icon:hover{color:var(--ink)}
+.ft-copyright{font-size:12px;color:var(--ink-3)}
+.ft-legal{display:flex;gap:14px}
+.ft-legal a{font-size:12px;color:var(--ink-3);cursor:pointer;transition:color .15s}
+.ft-legal a:hover{color:var(--ink)}
+.ft-legal .sep{color:var(--line-2)}
+.ft-lang{display:flex;align-items:center;gap:5px;font-size:12px;color:var(--ink-3);cursor:pointer;padding:4px 10px;border:1px solid var(--line);border-radius:6px;transition:border-color .15s}
+.ft-lang:hover{border-color:var(--line-2);color:var(--ink)}
+.ft-disclaimer{font-size:11px;color:var(--ink-4);line-height:1.6;margin-top:14px;padding-top:14px;border-top:1px solid var(--line)}
+.ft-item{margin-bottom:7px}
+.ft-item-name{font-size:13px;font-weight:600;color:var(--ink);display:block;cursor:pointer;transition:color .15s}
+.ft-item-name:hover{color:var(--teal)}
+.ft-item-sub{font-size:11px;color:var(--ink-4);display:block}
+
+.page-pad{padding-bottom:48px}
+
+@media(max-width:900px){
+  .nc-slide{flex:0 0 calc(100% / 1.1)} .nc-slide-img{height:200px} .nc-slide{filter:blur(2px);opacity:.6}
+  .briefing-grid{grid-template-columns:1fr}
+  .pdd-in{grid-template-columns:1fr}
+  .hero-in{grid-template-columns:1fr}
+  .main-grid{grid-template-columns:1fr}
+}
+@media(max-width:600px){
+  .nc-slide{flex:0 0 90%} .nc-slide-img{height:160px} .nc-slide-body{padding:14px 16px 16px} .nc-slide-title{font-size:17px}
+  .ev-grid{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════
+     NAVBAR + STREAK
+═══════════════════════════════════════ -->
+<nav class="navbar" id="navbar">
+  <div class="nav-in">
+    <div class="n-logo"><span class="i">i</span><span class="t">Pysy</span></div>
+    <div class="n-search">
+      <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      <input type="text" placeholder="Buscar previsão, mercado ou evento...">
+    </div>
+    <div class="n-links">
+      <div class="n-link active">Explorar</div>
+      <div class="n-link">Mercados</div>
+      <div class="n-link">Ranking</div>
+      <div class="n-link">Academia</div>
+    </div>
+    <div class="n-right">
+      <!-- STREAK BADGE -->
+      <div class="streak-pill" title="Você está em sequência há 7 dias consecutivos!">
+        <span class="streak-flame">🔥</span>
+        <strong>7</strong>
+        <span class="days">dias</span>
+      </div>
+      <button class="btn-ghost">Entrar</button>
+      <button class="btn-accent">Comece grátis</button>
+    </div>
+  </div>
+</nav>
+
+<!-- ═══════════════════════════════════════
+     CATEGORY TABS
+═══════════════════════════════════════ -->
+<div class="catbar">
+  <div class="catbar-in">
+    <button class="cat-btn active">🔥 Em alta</button>
+    <button class="cat-btn">Economia <span class="cat-cnt">18</span></button>
+    <button class="cat-btn">Política <span class="cat-cnt">12</span></button>
+    <button class="cat-btn">Eleições 2026 <span class="cat-cnt">9</span></button>
+    <button class="cat-btn">Esportes <span class="cat-cnt">14</span></button>
+    <button class="cat-btn">Tecnologia <span class="cat-cnt">6</span></button>
+    <button class="cat-btn">Cultura <span class="cat-cnt">8</span></button>
+    <button class="cat-btn">Internacional <span class="cat-cnt">11</span></button>
+    <button class="cat-btn">⏳ Encerra em breve</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     HERO
+═══════════════════════════════════════ -->
+<section style="background:var(--surface);border-bottom:1px solid var(--line);padding:28px 24px 0">
+  <div class="hero-in">
+    <div class="hero-left">
+      <h1 class="hero-h1">O que o Brasil realmente espera do futuro?</h1>
+      <p class="hero-sub">Inteligência preditiva colaborativa. Faça previsões, construa reputação verificável e descubra o consenso de milhares de analistas em tempo real.</p>
+      <div class="hero-cta"><button class="btn-primary">Comece grátis →</button><button class="btn-outline">Como funciona?</button></div>
+      <div class="feat-event">
+        <div class="fe-header"><span class="fe-label">🗳️ Eleições 2026 · Apelo popular</span><span class="fe-live"><span class="live-dot"></span>Ao vivo · 2.891 previsores</span></div>
+        <div class="fe-body">
+          <div class="fe-question">Quem será o próximo presidente do Brasil?</div>
+          <div class="fe-opts">
+            <div class="fe-opt"><span>🔴</span><span class="fe-opt-name">Lula (PT)</span><div class="fe-opt-bar-wrap"><div class="fe-opt-bar" style="width:62%;background:linear-gradient(90deg,#B91C1C,#EF4444)"></div></div><span class="fe-opt-pct">62%</span></div>
+            <div class="fe-opt"><span>🔵</span><span class="fe-opt-name">F. Bolsonaro (PL)</span><div class="fe-opt-bar-wrap"><div class="fe-opt-bar" style="width:28%;background:linear-gradient(90deg,#1D4ED8,#3B82F6)"></div></div><span class="fe-opt-pct">28%</span></div>
+            <div class="fe-opt"><span>⚪</span><span class="fe-opt-name">Terceiro candidato</span><div class="fe-opt-bar-wrap"><div class="fe-opt-bar" style="width:10%;background:var(--surface-3)"></div></div><span class="fe-opt-pct">10%</span></div>
+          </div>
+          <div class="fe-yn"><button class="fe-btn-sim">Sim 62% ↑</button><button class="fe-btn-nao">Não 38% ↓</button></div>
+          <div class="fe-articles">
+            <div class="fe-articles-label">Notícias relacionadas</div>
+            <div class="fe-article"><span class="fe-art-src">InfoMoney</span><span class="fe-art-title">BTG aponta ações favoritas em cenários com Lula ou Flávio Bolsonaro em 2026</span></div>
+            <div class="fe-article"><span class="fe-art-src">CNN Brasil</span><span class="fe-art-title">Pesquisa Genial/Quaest: Lula lidera com 51% no primeiro turno</span></div>
+            <div class="fe-article"><span class="fe-art-src">Folha</span><span class="fe-art-title">Flávio Bolsonaro confirma candidatura e anuncia programa econômico</span></div>
+          </div>
+          <div class="fe-vol"><span>📊 2.891 previsores · <strong>▲ Lula +4pp</strong> esta semana</span></div>
+          <div class="fe-feed">
+            <div class="fe-feed-label">Previsões recentes</div>
+            <div class="fe-feed-item"><div class="fe-av" style="background:#FEE2E2;color:#991B1B">AV</div><span class="fe-user">analista.vital</span><span class="fe-val y">Lula 64%</span></div>
+            <div class="fe-feed-item"><div class="fe-av" style="background:#DBEAFE;color:#1E40AF">ML</div><span class="fe-user">macrolivre</span><span class="fe-val n">FBolsonaro 35%</span></div>
+            <div class="fe-feed-item"><div class="fe-av" style="background:#D1FAE5;color:#065F46">FP</div><span class="fe-user">futuro.prob</span><span class="fe-val y">Lula 60%</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="hero-right">
+      <div class="hr-block">
+        <div class="hr-head">Últimas notícias<span class="hr-more">Todas →</span></div>
+        <div class="rn-item"><div class="rn-src">Agência Brasil · 1h</div><div class="rn-title">Copom decide Selic em meio à guerra e inflação acelerando</div><span class="rn-tag">🎯 Selic abaixo de 14% · 62%</span></div>
+        <div class="rn-item"><div class="rn-src">CNN Brasil · 2h</div><div class="rn-title">Ibovespa despenca 2,38% com tensão no Oriente Médio</div><span class="rn-tag">🎯 Ibovespa 200k · 48%</span></div>
+        <div class="rn-item"><div class="rn-src">Agência Brasil · 4h</div><div class="rn-title">Lula assina decreto promulgando acordo comercial Mercosul-UE</div><span class="rn-tag">🎯 Acordo UE-Mercosul ativo · 72%</span></div>
+        <div class="rn-item"><div class="rn-src">InfoMoney · 5h</div><div class="rn-title">Petrobras lidera 2026 com alta acumulada de 70,14%</div><span class="rn-tag">🎯 Petrobras acima de R$40 · 54%</span></div>
+      </div>
+      <div class="hr-block">
+        <div class="hr-head">Eventos em Alta<span class="hr-more">Ver todos →</span></div>
+        <div class="re-item"><span class="re-n">1</span><div class="re-body"><div class="re-q">Ibovespa vai a 200k em 2026?</div></div><div class="re-right"><div class="re-pct">48%</div><div class="re-delta dn">▼ 4pp</div></div></div>
+        <div class="re-item"><span class="re-n">2</span><div class="re-body"><div class="re-q">Selic abaixo de 14% no Copom de maio?</div></div><div class="re-right"><div class="re-pct">62%</div><div class="re-delta up">▲ 8pp</div></div></div>
+        <div class="re-item"><span class="re-n">3</span><div class="re-body"><div class="re-q">Petrobras acima de R$ 40 em 2026?</div></div><div class="re-right"><div class="re-pct">54%</div><div class="re-delta up">▲ 6pp</div></div></div>
+        <div class="re-item"><span class="re-n">4</span><div class="re-body"><div class="re-q">Brasil campeão Copa América?</div></div><div class="re-right"><div class="re-pct">54%</div><div class="re-delta up">▲ 6pp</div></div></div>
+        <div class="re-item"><span class="re-n">5</span><div class="re-body"><div class="re-q">Reforma trabalhista 6x1 aprovada?</div></div><div class="re-right"><div class="re-pct">41%</div><div class="re-delta up">▲ 3pp</div></div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════
+     MORNING BRIEFING  ★ NOVO
+═══════════════════════════════════════ -->
+<section class="briefing">
+  <div class="briefing-in">
+    <div class="briefing-top" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+      <div class="briefing-title">
+        ☀️ Briefing de hoje &nbsp;<span class="bdate">domingo, 10 de maio de 2026</span>
+      </div>
+      <div class="briefing-upd">🔄 Atualizado há 8 min</div>
+    </div>
+    <div class="briefing-grid">
+      <!-- Maior movimento -->
+      <div class="brf-card">
+        <div class="brf-label move">📈 Maior movimento do dia</div>
+        <div class="brf-q">Selic abaixo de 14% no Copom de maio?</div>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+          <span class="brf-delta up">▲ +8pp hoje</span>
+          <span style="font-size:13px;font-weight:800;color:#fff">62%</span>
+        </div>
+        <div class="brf-meta">2.812 previsores · Economia</div>
+      </div>
+      <!-- Resolução do dia -->
+      <div class="brf-card">
+        <div class="brf-label res">✅ Resolvido ontem</div>
+        <div class="brf-q">PIB do Brasil crescerá mais de 2% no 1T26?</div>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+          <span style="font-size:13px;font-weight:800;color:var(--gold-lt)">SIM — 2,4%</span>
+          <span style="font-size:11px;color:rgba(255,255,255,.4)">Consenso era 61%</span>
+        </div>
+        <div class="brf-meta">1.104 acertaram · 68% de acurácia</div>
+      </div>
+      <!-- Destaque da comunidade -->
+      <div class="brf-card">
+        <div class="brf-label hot">🔥 Destaque da comunidade</div>
+        <div class="brf-q">Dólar fecha a semana abaixo de R$ 5,00?</div>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+          <span class="brf-delta dn">▼ -5pp hoje</span>
+          <span style="font-size:13px;font-weight:800;color:#fff">33%</span>
+        </div>
+        <div class="brf-meta">980 previsores · Internacional</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════
+     PERGUNTA DO DIA  ★ NOVO
+═══════════════════════════════════════ -->
+<section class="pdd">
+  <div class="pdd-in">
+    <div>
+      <div class="pdd-badge"><span class="pdd-badge-dot"></span>Pergunta do dia — nova a cada meia-noite</div>
+      <h2 class="pdd-question">O Ibovespa vai fechar esta semana acima dos 130.000 pontos?</h2>
+      <p class="pdd-sub">Responda hoje e veja como seu palpite se compara ao consenso de milhares de analistas.</p>
+      <div class="pdd-btns">
+        <button class="pdd-btn sim" onclick="votePDD(this,'sim')">👍 Sim, vai subir</button>
+        <button class="pdd-btn nao" onclick="votePDD(this,'nao')">👎 Não, vai cair</button>
+      </div>
+    </div>
+    <div class="pdd-right">
+      <div class="pdd-timer-label">⏳ Encerra em</div>
+      <div class="pdd-countdown">
+        <div class="pdd-tc"><span class="num" id="pddH">--</span><span class="lbl">horas</span></div>
+        <div class="pdd-sep">:</div>
+        <div class="pdd-tc"><span class="num" id="pddM">--</span><span class="lbl">min</span></div>
+        <div class="pdd-sep">:</div>
+        <div class="pdd-tc"><span class="num" id="pddS">--</span><span class="lbl">seg</span></div>
+      </div>
+      <div class="pdd-stats">
+        <div class="pdd-stat-row"><span class="label">Sim</span><span class="value">54%</span></div>
+        <div class="pdd-bar-wrap"><div class="pdd-bar-sim" id="pddBarSim" style="width:54%"></div></div>
+        <div style="height:6px"></div>
+        <div class="pdd-stat-row"><span class="label">Não</span><span class="value">46%</span></div>
+        <div class="pdd-bar-wrap"><div class="pdd-bar-sim" style="width:46%;background:linear-gradient(90deg,#B03030,#EF4444)"></div></div>
+      </div>
+      <div class="pdd-participants">📊 <strong style="color:rgba(255,255,255,.7)">1.847</strong> respostas hoje</div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════
+     CARROSSEL DE NOTÍCIAS
+═══════════════════════════════════════ -->
+<section class="nc-section" aria-label="Notícias em destaque">
+  <div class="nc-carousel-container">
+    <div class="nc-header-row">
+      <span class="nc-hl">📰 Notícias em destaque</span>
+      <div class="nc-nav" aria-hidden="true">
+        <button class="nc-btn" id="ncPrev" aria-label="Anterior">‹</button>
+        <button class="nc-btn" id="ncNext" aria-label="Próximo">›</button>
+      </div>
+    </div>
+    <div class="nc-carousel">
+      <div class="nc-track" id="ncTrack"></div>
+    </div>
+    <div class="nc-dots" id="ncDots" role="tablist"></div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════
+     MAIN GRID
+═══════════════════════════════════════ -->
+<div class="main-wrap page-pad">
+  <div class="main-grid">
+
+    <!-- ── COLUNA PRINCIPAL ── -->
+    <div>
+
+      <!-- DESAFIO RÁPIDO ★ NOVO -->
+      <div class="dq-card">
+        <div class="dq-head">
+          <div class="dq-badge"><span class="live-dot"></span>⚡ Desafio Rápido — Hoje</div>
+          <div class="dq-timer" id="dqTimer">Encerra em --:--:--</div>
+        </div>
+        <div class="dq-body">
+          <div class="dq-intro">3 perguntas rápidas que resolvem em 24h. Responda tudo e ganhe o badge <strong>🎯 Respondeu Hoje</strong>.</div>
+
+          <div class="dq-q" id="dqQ1">
+            <div class="dq-q-top">
+              <span class="dq-q-text">O dólar vai fechar acima de R$ 5,70 hoje?</span>
+              <span class="dq-q-num">1/3</span>
+            </div>
+            <div class="dq-q-btns">
+              <button class="dq-sim" onclick="selectDQ(this,'sim','dqQ1')">Sim</button>
+              <button class="dq-nao" onclick="selectDQ(this,'nao','dqQ1')">Não</button>
+            </div>
+          </div>
+
+          <div class="dq-q" id="dqQ2">
+            <div class="dq-q-top">
+              <span class="dq-q-text">O Ibovespa vai subir mais de 1% nesta segunda?</span>
+              <span class="dq-q-num">2/3</span>
+            </div>
+            <div class="dq-q-btns">
+              <button class="dq-sim" onclick="selectDQ(this,'sim','dqQ2')">Sim</button>
+              <button class="dq-nao" onclick="selectDQ(this,'nao','dqQ2')">Não</button>
+            </div>
+          </div>
+
+          <div class="dq-q" id="dqQ3">
+            <div class="dq-q-top">
+              <span class="dq-q-text">A Petrobras vai anunciar dividendos esta semana?</span>
+              <span class="dq-q-num">3/3</span>
+            </div>
+            <div class="dq-q-btns">
+              <button class="dq-sim" onclick="selectDQ(this,'sim','dqQ3')">Sim</button>
+              <button class="dq-nao" onclick="selectDQ(this,'nao','dqQ3')">Não</button>
+            </div>
+          </div>
+
+          <div class="dq-foot">
+            <span class="dq-prog"><strong id="dqCount">0</strong>/3 respondidas</span>
+            <span style="font-size:10px;color:var(--ink-4)">613 participantes hoje</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- DESAFIO TRIMESTRAL (existente) -->
+      <div class="challenge">
+        <div class="ch-badge"><span class="live-dot"></span>Desafio ativo</div>
+        <div class="ch-title">Desafio de Acurácia — Economia Q2 2026</div>
+        <div class="ch-sub">Preveja 10 eventos econômicos que resolvem até junho. Os mais calibrados conquistam o Selo iPYSY e entram no Ranking Elite.</div>
+        <div class="ch-stats">
+          <div class="ch-stat"><div class="n">847</div><div class="l">Participantes</div></div>
+          <div class="ch-stat"><div class="n">10</div><div class="l">Eventos</div></div>
+          <div class="ch-stat"><div class="n">6</div><div class="l">Resolvidos</div></div>
+          <div class="ch-stat"><div class="n">17</div><div class="l">Dias rest.</div></div>
+        </div>
+        <div class="ch-foot"><button class="btn-primary" style="font-size:12px;padding:8px 18px">Participar →</button><span class="timer">⏳ Encerra em 17 dias</span></div>
+      </div>
+
+      <!-- TODOS OS MERCADOS -->
+      <div class="section-hd"><h2>🌐 Todos os mercados</h2><span class="more">Ver todos →</span></div>
+      <div class="ev-grid">
+        <div class="ev"><div class="ev-cat">Economia <span class="ev-date">31 dez 2026</span></div><div class="ev-title">Ibovespa acima de 200.000 pontos em 2026?</div><div class="ev-spark"><div class="b" style="height:55%"></div><div class="b" style="height:58%"></div><div class="b" style="height:60%"></div><div class="b" style="height:57%"></div><div class="b" style="height:55%"></div><div class="b" style="height:52%"></div><div class="b" style="height:50%"></div><div class="b" style="height:48%"></div></div><div class="ev-bar-row"><span class="y">48% Sim</span><span class="n">52% Não</span></div><div class="ev-track"><div class="ev-fill" style="width:48%"></div></div><div class="ev-foot"><span>📊 4.208 prev.</span><span class="trend dn">▼ -4pp</span></div><div class="ev-news">CNN: Ibovespa despenca 2,38% · 2h</div></div>
+        <div class="ev"><div class="ev-cat">Economia <span class="ev-date">mai 2026</span></div><div class="ev-title">Copom corta Selic para 14,5% em maio?</div><div class="ev-spark"><div class="b" style="height:48%"></div><div class="b" style="height:52%"></div><div class="b" style="height:55%"></div><div class="b" style="height:58%"></div><div class="b" style="height:60%"></div><div class="b" style="height:61%"></div><div class="b" style="height:62%"></div><div class="b" style="height:62%"></div></div><div class="ev-bar-row"><span class="y">62% Sim</span><span class="n">38% Não</span></div><div class="ev-track"><div class="ev-fill" style="width:62%"></div></div><div class="ev-foot"><span>📊 2.812 prev.</span><span class="trend up">▲ +8pp</span></div><div class="ev-news">Agência Brasil: Copom decide Selic · 1h</div></div>
+        <div class="ev"><div class="ev-cat">Economia <span class="ev-date">31 dez 2026</span></div><div class="ev-title">Petrobras (PETR4) acima de R$ 45 até dezembro?</div><div class="ev-spark"><div class="b" style="height:40%"></div><div class="b" style="height:44%"></div><div class="b" style="height:48%"></div><div class="b" style="height:50%"></div><div class="b" style="height:52%"></div><div class="b" style="height:53%"></div><div class="b" style="height:54%"></div><div class="b" style="height:54%"></div></div><div class="ev-bar-row"><span class="y">54% Sim</span><span class="n">46% Não</span></div><div class="ev-track"><div class="ev-fill" style="width:54%"></div></div><div class="ev-foot"><span>📊 1.427 prev.</span><span class="trend up">▲ +6pp</span></div><div class="ev-news">InfoMoney: PETR alta de 70% em 2026 · 5h</div></div>
+        <div class="ev"><div class="ev-cat">Política <span class="ev-date">31 dez 2026</span></div><div class="ev-title">Reforma da jornada 6x1 aprovada em 2026?</div><div class="ev-spark"><div class="b" style="height:35%"></div><div class="b" style="height:37%"></div><div class="b" style="height:38%"></div><div class="b" style="height:40%"></div><div class="b" style="height:40%"></div><div class="b" style="height:41%"></div><div class="b" style="height:41%"></div><div class="b" style="height:41%"></div></div><div class="ev-bar-row"><span class="y">41% Sim</span><span class="n">59% Não</span></div><div class="ev-track"><div class="ev-fill" style="width:41%"></div></div><div class="ev-foot"><span>📊 724 prev.</span><span class="trend up">▲ +3pp</span></div></div>
+        <div class="ev"><div class="ev-cat">Internacional <span class="ev-date">dez 2026</span></div><div class="ev-title">Dólar abaixo de R$ 4,80 com acordo Mercosul-UE?</div><div class="ev-bar-row"><span class="y">38% Sim</span><span class="n">62% Não</span></div><div class="ev-track"><div class="ev-fill" style="width:38%"></div></div><div class="ev-foot"><span>📊 980 prev.</span><span class="trend up">↑ Novo</span></div><div class="ev-news">Agência Brasil: Acordo UE-Mercosul · 4h</div></div>
+        <div class="ev"><div class="ev-cat">Esportes <span class="ev-date">jul 2026</span></div><div class="ev-title">Brasil vencerá a Copa América 2026?</div><div class="ev-spark"><div class="b" style="height:48%"></div><div class="b" style="height:50%"></div><div class="b" style="height:52%"></div><div class="b" style="height:53%"></div><div class="b" style="height:53%"></div><div class="b" style="height:54%"></div><div class="b" style="height:54%"></div><div class="b" style="height:54%"></div></div><div class="ev-bar-row"><span class="y">54% Sim</span><span class="n">46% Não</span></div><div class="ev-track"><div class="ev-fill" style="width:54%"></div></div><div class="ev-foot"><span>📊 3.102 prev.</span><span class="trend up">▲ +6pp</span></div></div>
+      </div>
+
+      <!-- RESOLUÇÕES DE HOJE ★ NOVO -->
+      <div class="res-section">
+        <div class="section-hd"><h2>✅ Resoluções de hoje</h2><span class="more">Ver histórico →</span></div>
+        <div class="res-grid">
+          <div class="res-card">
+            <div class="res-verdict sim">✅</div>
+            <div class="res-body">
+              <div class="res-q">PIB do Brasil crescerá mais de 2% no 1T26?</div>
+              <div class="res-meta">Resolvido em 9 mai · Economia · 1.104 previsores</div>
+            </div>
+            <div class="res-right">
+              <div class="res-outcome sim">SIM</div>
+              <div class="res-acc">Consenso: 61%</div>
+              <div class="res-badge-acertei">🎯 Você acertou</div>
+            </div>
+          </div>
+          <div class="res-card">
+            <div class="res-verdict nao">❌</div>
+            <div class="res-body">
+              <div class="res-q">Inflação IPCA de abril ficará abaixo de 0,5%?</div>
+              <div class="res-meta">Resolvido em 9 mai · Economia · 876 previsores</div>
+            </div>
+            <div class="res-right">
+              <div class="res-outcome nao">NÃO — 0,61%</div>
+              <div class="res-acc">Consenso: 44%</div>
+            </div>
+          </div>
+          <div class="res-card">
+            <div class="res-verdict sim">✅</div>
+            <div class="res-body">
+              <div class="res-q">Acordo Mercosul-UE será ratificado pelo Brasil até maio?</div>
+              <div class="res-meta">Resolvido em 9 mai · Internacional · 2.203 previsores</div>
+            </div>
+            <div class="res-right">
+              <div class="res-outcome sim">SIM</div>
+              <div class="res-acc">Consenso: 72%</div>
+              <div class="res-badge-acertei">🎯 Você acertou</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- RADAR DE CONSENSO ★ NOVO -->
+      <div class="radar-section">
+        <div class="section-hd" style="border-bottom:none;margin-bottom:0;padding-bottom:0"><h2>📡 Radar de consenso — últimas 24h</h2><span class="more">Ver tudo →</span></div>
+        <div class="radar-grid" id="radarGrid">
+          <!-- Preenchido por JS -->
+        </div>
+      </div>
+
+    </div><!-- /coluna principal -->
+
+    <!-- ── SIDEBAR ── -->
+    <div>
+
+      <!-- SUAS POSIÇÕES HOJE ★ NOVO -->
+      <div class="pos-card">
+        <div class="pos-head">
+          <span class="pos-title">📌 Suas posições hoje</span>
+          <span style="font-size:11px;font-weight:600;color:var(--teal);cursor:pointer">Ver todas →</span>
+        </div>
+        <div class="pos-body">
+          <div class="pos-item">
+            <div class="pos-icon up">📈</div>
+            <div class="pos-info">
+              <div class="pos-q">Selic abaixo de 14% em maio?</div>
+              <div class="pos-bet">Sua previsão: <strong>Sim</strong></div>
+            </div>
+            <div class="pos-right">
+              <div class="pos-now">62%</div>
+              <div class="pos-chg up">▲ +8pp</div>
+            </div>
+          </div>
+          <div class="pos-item">
+            <div class="pos-icon dn">📉</div>
+            <div class="pos-info">
+              <div class="pos-q">Ibovespa acima de 200k em 2026?</div>
+              <div class="pos-bet">Sua previsão: <strong>Sim</strong></div>
+            </div>
+            <div class="pos-right">
+              <div class="pos-now">48%</div>
+              <div class="pos-chg dn">▼ -4pp</div>
+            </div>
+          </div>
+          <div class="pos-item">
+            <div class="pos-icon up">📈</div>
+            <div class="pos-info">
+              <div class="pos-q">Brasil campeão Copa América?</div>
+              <div class="pos-bet">Sua previsão: <strong>Sim</strong></div>
+            </div>
+            <div class="pos-right">
+              <div class="pos-now">54%</div>
+              <div class="pos-chg up">▲ +6pp</div>
+            </div>
+          </div>
+          <div class="pos-item" style="border-bottom:none">
+            <div class="pos-icon neu">⚖️</div>
+            <div class="pos-info">
+              <div class="pos-q">Reforma 6x1 aprovada em 2026?</div>
+              <div class="pos-bet">Sua previsão: <strong>Não</strong></div>
+            </div>
+            <div class="pos-right">
+              <div class="pos-now">41%</div>
+              <div class="pos-chg neu">= sem chg</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PLACAR DIÁRIO ★ NOVO -->
+      <div class="placar-card">
+        <div class="placar-head">
+          <span class="placar-title">🏅 Placar do dia — 10 mai</span>
+          <span style="font-size:11px;font-weight:600;color:var(--gold);cursor:pointer">Ranking →</span>
+        </div>
+        <div class="placar-body">
+          <div class="placar-item">
+            <span class="pl-rank g">1</span>
+            <div class="pl-av" style="background:#FEE2E2;color:#991B1B">AV</div>
+            <div class="pl-info"><div class="pl-name">analista.vital</div><div class="pl-pts">3 de 3 corretas hoje</div></div>
+            <div class="pl-right"><div class="pl-score">+42 pts</div><div class="pl-change">↑ novo líder</div></div>
+          </div>
+          <div class="placar-item">
+            <span class="pl-rank s">2</span>
+            <div class="pl-av" style="background:#EDE9FE;color:#5B21B6">GP</div>
+            <div class="pl-info"><div class="pl-name">gabriel.prev</div><div class="pl-pts">3 de 3 corretas hoje</div></div>
+            <div class="pl-right"><div class="pl-score">+38 pts</div><div class="pl-change">↑ +5</div></div>
+          </div>
+          <div class="placar-item">
+            <span class="pl-rank b">3</span>
+            <div class="pl-av" style="background:#DBEAFE;color:#1E40AF">ML</div>
+            <div class="pl-info"><div class="pl-name">macrolivre</div><div class="pl-pts">2 de 3 corretas hoje</div></div>
+            <div class="pl-right"><div class="pl-score">+29 pts</div><div class="pl-change">↑ +2</div></div>
+          </div>
+          <div class="placar-item" style="border-bottom:none">
+            <span class="pl-rank" style="background:var(--teal-bg);color:var(--teal);width:18px;height:18px;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:900;flex-shrink:0">—</span>
+            <div class="pl-av" style="background:var(--surface-3);color:var(--ink-3)">EU</div>
+            <div class="pl-info"><div class="pl-name" style="color:var(--teal)">Você</div><div class="pl-pts">2 de 3 corretas hoje</div></div>
+            <div class="pl-right"><div class="pl-score" style="color:var(--teal)">+24 pts</div></div>
+          </div>
+        </div>
+        <div class="placar-footer">Placar reinicia à meia-noite · Desafio Rápido conta 3× os pontos</div>
+      </div>
+
+      <!-- PREVISORES EM DESTAQUE (existente) -->
+      <div class="side-card">
+        <div class="sc-head"><span class="sc-title">🏆 Previsores em destaque</span><span class="sc-more">Ranking →</span></div>
+        <div class="sc-body">
+          <div class="pv"><span class="pv-rank g">1</span><div class="av" style="background:#FEE2E2;color:#991B1B">AV</div><div class="pv-info"><div class="pv-name">analista.vital</div><span class="pv-level elite">🏅 Elite</span><div class="mini-track"><div class="b g" style="height:90%"></div><div class="b g" style="height:85%"></div><div class="b g" style="height:95%"></div><div class="b o" style="height:60%"></div><div class="b g" style="height:92%"></div><div class="b g" style="height:96%"></div></div><div class="pv-acc">89% acurácia · 2.341 prev.</div></div></div>
+          <div class="pv"><span class="pv-rank s">2</span><div class="av" style="background:#DBEAFE;color:#1E40AF">ML</div><div class="pv-info"><div class="pv-name">macrolivre</div><span class="pv-level expert">📊 Expert</span><div class="mini-track"><div class="b g" style="height:82%"></div><div class="b g" style="height:88%"></div><div class="b o" style="height:55%"></div><div class="b g" style="height:90%"></div><div class="b g" style="height:85%"></div><div class="b g" style="height:87%"></div></div><div class="pv-acc">84% acurácia · 1.987 prev.</div></div></div>
+          <div class="pv"><span class="pv-rank b">3</span><div class="av" style="background:#D1FAE5;color:#065F46">FP</div><div class="pv-info"><div class="pv-name">futuro.prob</div><span class="pv-level expert">📊 Expert</span><div class="mini-track"><div class="b g" style="height:80%"></div><div class="b o" style="height:58%"></div><div class="b g" style="height:86%"></div><div class="b g" style="height:82%"></div><div class="b g" style="height:88%"></div><div class="b g" style="height:85%"></div></div><div class="pv-acc">82% acurácia · 1.654 prev.</div></div></div>
+        </div>
+      </div>
+
+      <!-- PROMO (existente) -->
+      <div class="promo-card">
+        <div class="promo-eyebrow">iPYSY · Plataforma</div>
+        <div class="promo-title">Construa sua reputação intelectual</div>
+        <div class="promo-sub">Diferente de apostas — cada previsão correta constrói sua identidade pública verificável.</div>
+        <div class="promo-bullets">
+          <div class="promo-bullet"><span class="promo-bullet-dot"></span>Reputação baseada em acurácia real</div>
+          <div class="promo-bullet"><span class="promo-bullet-dot"></span>Perfil público com histórico verificável</div>
+          <div class="promo-bullet"><span class="promo-bullet-dot"></span>Sem apostas reais — 100% gratuito</div>
+        </div>
+        <button class="promo-btn">Criar meu perfil →</button>
+      </div>
+
+    </div><!-- /sidebar -->
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     FOOTER
+═══════════════════════════════════════ -->
+<footer class="footer">
+  <div class="footer-in">
+    <div class="footer-brand">
+      <div class="ft-logo"><span class="i">i</span><span class="t">Pysy</span></div>
+      <div class="ft-tagline">Intelligence for Decisions™</div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:32px 48px;margin-bottom:32px">
+      <div>
+        <div style="font-size:11px;font-weight:700;color:var(--ink-3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:16px;padding-bottom:8px;border-bottom:1px solid var(--line)">Mercados por categoria e tópicos</div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px 20px">
+          <div>
+            <div class="ft-item"><span class="ft-item-name">Economia</span><span class="ft-item-sub">Previsões macroeconômicas</span></div>
+            <div class="ft-item"><span class="ft-item-name">Bitcoin</span><span class="ft-item-sub">Previsões de preço</span></div>
+            <div class="ft-item"><span class="ft-item-name">Ibovespa</span><span class="ft-item-sub">Odds e previsões</span></div>
+            <div class="ft-item"><span class="ft-item-name">Geopolítica</span><span class="ft-item-sub">Previsões globais</span></div>
+            <div class="ft-item"><span class="ft-item-name">Esportes</span><span class="ft-item-sub">Probabilidades</span></div>
+          </div>
+          <div>
+            <div class="ft-item"><span class="ft-item-name">Eleições</span><span class="ft-item-sub">Odds e previsões</span></div>
+            <div class="ft-item"><span class="ft-item-name">Criptomoedas</span><span class="ft-item-sub">Previsões de preços</span></div>
+            <div class="ft-item"><span class="ft-item-name">Econômico</span><span class="ft-item-sub">Previsões e análises</span></div>
+            <div class="ft-item"><span class="ft-item-name">Tecnologia</span><span class="ft-item-sub">Tendências e previsões</span></div>
+          </div>
+          <div>
+            <div class="ft-item"><span class="ft-item-name">Cultura</span><span class="ft-item-sub">Tendências e previsões</span></div>
+            <div class="ft-item"><span class="ft-item-name">Financeiro</span><span class="ft-item-sub">Previsões e odds</span></div>
+            <div class="ft-item"><span class="ft-item-name">Político</span><span class="ft-item-sub">Probabilidades</span></div>
+            <div class="ft-item"><span class="ft-item-name">Internacional</span><span class="ft-item-sub">Odds globais</span></div>
+          </div>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:0 32px">
+        <div>
+          <div style="font-size:11px;font-weight:700;color:var(--ink-3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:16px;padding-bottom:8px;border-bottom:1px solid var(--line)">Suporte e Redes Sociais</div>
+          <div class="ft-item"><span class="ft-item-name">Aprender</span></div>
+          <div class="ft-item"><span class="ft-item-name">Twitter / X</span></div>
+          <div class="ft-item"><span class="ft-item-name">Instagram</span></div>
+          <div class="ft-item"><span class="ft-item-name">LinkedIn</span></div>
+          <div class="ft-item"><span class="ft-item-name">Discord</span></div>
+          <div class="ft-item"><span class="ft-item-name">Central de Ajuda</span></div>
+        </div>
+        <div>
+          <div style="font-size:11px;font-weight:700;color:var(--ink-3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:16px;padding-bottom:8px;border-bottom:1px solid var(--line)">iPYSY</div>
+          <div class="ft-item"><span class="ft-item-name">Ranking</span></div>
+          <div class="ft-item"><span class="ft-item-name">APIs</span></div>
+          <div class="ft-item"><span class="ft-item-name">Precisão</span></div>
+          <div class="ft-item"><span class="ft-item-name">Marca</span></div>
+          <div class="ft-item"><span class="ft-item-name">Carreiras</span></div>
+          <div class="ft-item"><span class="ft-item-name">Imprensa</span></div>
+        </div>
+      </div>
+    </div>
+    <hr class="footer-divider">
+    <div class="footer-bottom">
+      <div class="ft-social">
+        <span class="ft-social-icon">✉</span>
+        <span class="ft-social-icon">𝕏</span>
+        <span class="ft-social-icon">◎</span>
+        <span class="ft-social-icon">⊕</span>
+        <span class="ft-social-icon" style="font-size:13px">in</span>
+      </div>
+      <div class="ft-copyright">iPYSY Inteligência Preditiva © 2026</div>
+      <div class="ft-legal">
+        <a>Privacidade</a><span class="sep">·</span>
+        <a>Termos de Uso</a><span class="sep">·</span>
+        <a>Integridade da plataforma</a><span class="sep">·</span>
+        <a>Central de Ajuda</a>
+      </div>
+      <div class="ft-lang">🌐 Português ▾</div>
+    </div>
+    <div class="ft-disclaimer">
+      A iPYSY é uma plataforma de inteligência coletiva e não realiza apostas financeiras reais. Nenhum valor monetário é apostado ou ganho nas previsões. As probabilidades refletem o consenso coletivo de previsores e não devem ser interpretadas como recomendações de investimento. © 2026 iPYSY — Intelligence for Decisions.
+    </div>
+  </div>
+</footer>
+
+<script>
+// ── CATEGORY TABS ──────────────────────────────────────
+document.querySelectorAll('.cat-btn').forEach(b => {
+  b.addEventListener('click', function() {
+    document.querySelectorAll('.cat-btn').forEach(x => x.classList.remove('active'));
+    this.classList.add('active');
+  });
+});
+
+// ── NAVBAR SHADOW ──────────────────────────────────────
+window.addEventListener('scroll', () => {
+  document.getElementById('navbar').style.boxShadow = window.scrollY > 4 ? '0 2px 12px rgba(15,25,35,.08)' : 'none';
+}, { passive: true });
+
+// ── PERGUNTA DO DIA – COUNTDOWN ────────────────────────
+function updatePDDCountdown() {
+  const now = new Date();
+  const midnight = new Date(now);
+  midnight.setHours(24, 0, 0, 0);
+  const diff = midnight - now;
+  const h = String(Math.floor(diff / 3600000)).padStart(2,'0');
+  const m = String(Math.floor((diff % 3600000) / 60000)).padStart(2,'0');
+  const s = String(Math.floor((diff % 60000) / 1000)).padStart(2,'0');
+  document.getElementById('pddH').textContent = h;
+  document.getElementById('pddM').textContent = m;
+  document.getElementById('pddS').textContent = s;
+}
+updatePDDCountdown();
+setInterval(updatePDDCountdown, 1000);
+
+function votePDD(btn, vote) {
+  const btns = btn.closest('.pdd-btns').querySelectorAll('.pdd-btn');
+  btns.forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+  // animate bar
+  const simPct = vote === 'sim' ? 57 : 43;
+  document.getElementById('pddBarSim').style.width = simPct + '%';
+}
+
+// ── DESAFIO RÁPIDO – TIMER & SELECTION ─────────────────
+function updateDQTimer() {
+  const now = new Date();
+  const midnight = new Date(now);
+  midnight.setHours(24, 0, 0, 0);
+  const diff = midnight - now;
+  const h = String(Math.floor(diff / 3600000)).padStart(2,'0');
+  const m = String(Math.floor((diff % 3600000) / 60000)).padStart(2,'0');
+  const s = String(Math.floor((diff % 60000) / 1000)).padStart(2,'0');
+  const el = document.getElementById('dqTimer');
+  if (el) el.textContent = `Encerra em ${h}:${m}:${s}`;
+}
+updateDQTimer();
+setInterval(updateDQTimer, 1000);
+
+let dqAnswered = new Set();
+function selectDQ(btn, vote, qId) {
+  const q = document.getElementById(qId);
+  q.querySelectorAll('button').forEach(b => b.classList.remove('sel'));
+  btn.classList.add('sel');
+  dqAnswered.add(qId);
+  document.getElementById('dqCount').textContent = dqAnswered.size;
+  if (dqAnswered.size === 3) {
+    setTimeout(() => {
+      const foot = document.querySelector('.dq-foot');
+      foot.innerHTML = '<span style="font-size:12px;font-weight:700;color:var(--teal)">🎯 Badge "Respondeu Hoje" conquistado!</span><span style="font-size:10px;color:var(--ink-4)">Resolução em 24h</span>';
+    }, 300);
+  }
+}
+
+// ── RADAR DE CONSENSO ──────────────────────────────────
+const radarData = [
+  { q: 'Selic abaixo de 14% no Copom de maio?',      pct: 62, delta: '+8pp', dir: 'up' },
+  { q: 'Brasil campeão Copa América 2026?',           pct: 54, delta: '+6pp', dir: 'up' },
+  { q: 'Petrobras acima de R$ 45 até dezembro?',      pct: 54, delta: '+6pp', dir: 'up' },
+  { q: 'Ibovespa acima de 200k em 2026?',             pct: 48, delta: '-4pp', dir: 'dn' },
+  { q: 'Reforma 6x1 aprovada em 2026?',               pct: 41, delta: '+3pp', dir: 'up' },
+  { q: 'Dólar abaixo de R$ 4,80 com Mercosul-UE?',   pct: 38, delta: '-5pp', dir: 'dn' },
+];
+const radarGrid = document.getElementById('radarGrid');
+radarData.forEach(r => {
+  const row = document.createElement('div');
+  row.innerHTML = `
+    <div class="radar-q">${r.q}</div>
+    <div class="radar-delta ${r.dir}">${r.dir==='up'?'▲':'▼'} ${r.delta}</div>
+    <div class="radar-pct">${r.pct}%</div>
+    <div class="radar-bar-wrap" style="grid-column:1/-1">
+      <div class="radar-bar ${r.dir}" style="width:0%;--w-final:${r.pct}%"></div>
+    </div>`;
+  radarGrid.appendChild(row);
+});
+// Animate bars on scroll
+const radarObs = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      e.target.querySelectorAll('.radar-bar').forEach(bar => {
+        bar.style.width = bar.style.getPropertyValue('--w-final') || bar.style.cssText.match(/--w-final:(\S+)/)?.[1] || '0%';
+        const match = bar.parentElement?.closest('[style]')?.getAttribute('style') || '';
+        // fallback: use dataset
+        bar.style.width = bar.getAttribute('data-w') || bar.style.width;
+      });
+      radarObs.unobserve(e.target);
+    }
+  });
+}, { threshold: 0.3 });
+// Direct approach — animate all bars on load after slight delay
+setTimeout(() => {
+  document.querySelectorAll('.radar-bar').forEach(bar => {
+    const cssMatch = bar.getAttribute('style')?.match(/--w-final:([^;]+)/);
+    if (cssMatch) bar.style.width = cssMatch[1].trim();
+  });
+}, 400);
+
+// ── NEWS CAROUSEL ──────────────────────────────────────
+(function() {
+  const noticiasData = [
+    { icone:'⚖️', cat:'Judiciário',    min:'4 min', titulo:'Moraes suspende lei da dosimetria em casos específicos', resumo:'Decisão do STF reabre debates sobre uniformidade das penas.', data:'10 maio 2026', img:'https://picsum.photos/id/188/800/450', link:'#' },
+    { icone:'🗳️', cat:'Eleições',      min:'3 min', titulo:'Ciro Gomes confirma candidatura à presidência em 2026', resumo:'Ex-governador anuncia filiação ao PDT e promete programa econômico alternativo.', data:'10 maio 2026', img:'https://picsum.photos/id/1005/800/450', link:'#' },
+    { icone:'💰', cat:'Economia',      min:'5 min', titulo:'Copom decide Selic em meio à guerra e inflação acelerando', resumo:'IPCA-15 acelerou para 4,37% em 12 meses. Analistas esperam corte de 0,25pp.', data:'10 maio 2026', img:'https://picsum.photos/id/3/800/450', link:'#' },
+    { icone:'📊', cat:'Mercados',      min:'3 min', titulo:'Ibovespa despenca 2,38% pressionado por tensão no Oriente Médio', resumo:'Petrobras, Itaú e Vale lideram as quedas. Índice acumulava alta de 16,3% em 2026.', data:'10 maio 2026', img:'https://picsum.photos/id/366/800/450', link:'#' },
+    { icone:'🌎', cat:'Internacional', min:'4 min', titulo:'Lula assina decreto promulgando acordo Mercosul-União Europeia', resumo:'Maior acordo comercial da história do Brasil entra em vigor. Impactos no câmbio.', data:'10 maio 2026', img:'https://picsum.photos/id/379/800/450', link:'#' },
+    { icone:'🏷️', cat:'Patrocinado',   min:null, pat:true, titulo:'Ypê — líder em higiene e limpeza no Brasil', resumo:'Ypê Bak, Pinho Sol e Antibac: proteção real para seu lar.', data:null, img:'https://picsum.photos/id/534/800/450', link:'#' },
+    { icone:'⚡', cat:'Política',      min:'3 min', titulo:'Reforma trabalhista: fim da escala 6x1 vai ao plenário do Senado', resumo:'Proposta prevê redução da jornada para 40h semanais, com dois dias de folga.', data:'10 maio 2026', img:'https://picsum.photos/id/26/800/450', link:'#' }
+  ];
+  const track = document.getElementById('ncTrack');
+  const dotsContainer = document.getElementById('ncDots');
+  const prevBtn = document.getElementById('ncPrev');
+  const nextBtn = document.getElementById('ncNext');
+  let currentIndex = 0;
+  let autoplayInterval = null;
+  let isMouseOver = false;
+
+  noticiasData.forEach((n, idx) => {
+    const slide = document.createElement('div');
+    slide.className = 'nc-slide' + (idx === 0 ? ' active' : '');
+    slide.setAttribute('data-index', idx);
+    slide.innerHTML = `<a href="${n.link}" style="text-decoration:none;color:inherit;display:block"><img class="nc-slide-img" src="${n.img}" alt="${n.titulo}" loading="${idx === 0 ? 'eager' : 'lazy'}"><div class="nc-slide-body"><span class="nc-badge${n.pat ? ' pat' : ''}">${n.icone} ${n.cat}${n.min ? ' · ' + n.min : ''}</span><h3 class="nc-slide-title">${n.titulo}</h3><p class="nc-slide-summary">${n.resumo}</p><div class="nc-slide-foot"><span>${n.data || ''}</span><span class="nc-slide-cta">Leia mais →</span></div></div></a>`;
+    track.appendChild(slide);
+    const dot = document.createElement('button');
+    dot.className = 'nc-dot' + (idx === 0 ? ' active' : '');
+    dot.setAttribute('aria-label', `Ir para slide ${idx+1}`);
+    dot.addEventListener('click', () => goToSlide(idx));
+    dotsContainer.appendChild(dot);
+  });
+
+  const slides = Array.from(document.querySelectorAll('.nc-slide'));
+  const dots = Array.from(document.querySelectorAll('.nc-dot'));
+
+  function centerActiveSlide() {
+    const container = document.querySelector('.nc-carousel');
+    const activeSlide = slides[currentIndex];
+    if (!activeSlide) return;
+    const containerRect = container.getBoundingClientRect();
+    const slideRect = activeSlide.getBoundingClientRect();
+    const offset = (slideRect.left + slideRect.width / 2) - (containerRect.left + containerRect.width / 2);
+    const cur = getComputedTransformX(track);
+    track.style.transform = `translateX(${cur - offset}px)`;
+  }
+  function getComputedTransformX(el) {
+    const t = getComputedStyle(el).transform;
+    if (t === 'none') return 0;
+    const m = t.match(/matrix.*\((.+)\)/);
+    return m ? parseFloat(m[1].split(', ')[4]) || 0 : 0;
+  }
+  function updateCarousel() {
+    slides.forEach((s, i) => s.classList.toggle('active', i === currentIndex));
+    dots.forEach((d, i) => d.classList.toggle('active', i === currentIndex));
+    centerActiveSlide();
+  }
+  function goToSlide(i) {
+    if (i < 0) i = slides.length - 1;
+    if (i >= slides.length) i = 0;
+    currentIndex = i;
+    updateCarousel();
+    resetAutoplay();
+  }
+  function startAutoplay() {
+    if (autoplayInterval) clearInterval(autoplayInterval);
+    autoplayInterval = setInterval(() => { if (!isMouseOver) goToSlide(currentIndex + 1); }, 5000);
+  }
+  function resetAutoplay() { if (autoplayInterval) { clearInterval(autoplayInterval); startAutoplay(); } }
+
+  document.querySelector('.nc-carousel').addEventListener('mouseenter', () => { isMouseOver = true; });
+  document.querySelector('.nc-carousel').addEventListener('mouseleave', () => { isMouseOver = false; });
+  prevBtn.addEventListener('click', () => goToSlide(currentIndex - 1));
+  nextBtn.addEventListener('click', () => goToSlide(currentIndex + 1));
+  window.addEventListener('resize', centerActiveSlide);
+  setTimeout(() => { updateCarousel(); }, 10);
+  startAutoplay();
+})();
+</script>
+</body>
+</html>

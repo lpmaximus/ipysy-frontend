@@ -1,0 +1,50 @@
+
+services:
+  # ========================================
+  # IPYSY Frontend — Next.js 15 (Produção)
+  # Imagem: GHCR (ghcr.io/lpmaximus/ipysy-frontend)
+  # Porta: 80 (host) → 3000 (container)
+  # Rede: ipysy-net (criada pelo backend)
+  # Ingress: Cloudflare Tunnel → ipysy.com / app.ipysy.com
+  #
+  # PRÉ-REQUISITO: gerar vault-runtime/.env.vault-frontend antes de subir:
+  #   VAULT_ADDR=http://vault:8200 VAULT_TOKEN=<token> \
+  #     sh scripts/vault/render-frontend-env.sh
+  #
+  # USO:
+  #   docker compose -f docker-compose.prod.yml --env-file .env.prod up -d
+  # ========================================
+
+  frontend:
+    image: ${FRONTEND_IMAGE:-ghcr.io/lpmaximus/ipysy-frontend:latest}
+    container_name: ipysy-frontend
+    ports:
+      - "80:3000"
+    env_file:
+      # Variáveis de infraestrutura (não-secretas)
+      - .env.prod
+      # Segredos gerados pelo Vault (render-frontend-env.sh)
+      - vault-runtime/.env.vault-frontend
+    environment:
+      NODE_ENV: production
+      NEXT_PUBLIC_ENVIRONMENT: production
+      PORT: 3000
+      HOSTNAME: 0.0.0.0
+    mem_limit: 512m
+    memswap_limit: 512m
+    healthcheck:
+      test: [ "CMD", "wget", "--spider", "-q", "http://localhost:3000/api/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    networks:
+      - ipysy-net
+    restart: unless-stopped
+
+networks:
+  # Rede compartilhada com o backend — deve existir antes de subir o frontend
+  # Criada pelo: cd ../ipysy-backend && docker compose -f docker-compose.prod.yml up -d
+  ipysy-net:
+    external: true
+    name: ${BACKEND_NETWORK:-ipysy-net}

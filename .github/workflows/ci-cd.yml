@@ -1,0 +1,255 @@
+name: CI/CD Pipeline — Frontend
+
+# ==========================================================
+# TRIGGERS:
+#   - PR para main       → typecheck + testes unitários (~3 min)
+#   - Push/merge em main → build Docker + push GHCR + deploy Hetzner
+#   - Manual             → escolher se pula o deploy
+# ==========================================================
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened]
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      skip_deploy:
+        description: 'Pular deploy no Hetzner?'
+        required: false
+        default: false
+        type: boolean
+
+env:
+  HETZNER_HOST: 46.62.230.6
+  HETZNER_USER: deploy
+  HETZNER_DEPLOY_DIR: /home/deploy/ipysy-frontend
+  GHCR_OWNER: lpmaximus
+  IMAGE_NAME: ghcr.io/lpmaximus/ipysy-frontend
+
+jobs:
+  # ============================================
+  # 1. TYPECHECK + TESTES UNITÁRIOS (PR e push)
+  # ============================================
+  test:
+    name: Typecheck & Unit Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'yarn'
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Typecheck
+        run: yarn typecheck
+
+      - name: Unit tests
+        run: yarn test --reporter=verbose
+
+      - name: Upload coverage
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: coverage/
+          retention-days: 7
+
+  # ============================================
+  # 2. BUILD DOCKER + PUSH GHCR
+  #    (só em push para main ou dispatch)
+  # ============================================
+  build:
+    name: Build & Push Docker
+    needs: test
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      image_tag: ${{ steps.meta.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Docker metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.IMAGE_NAME }}
+          tags: |
+            type=sha,prefix=,suffix=,format=short
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and push
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile
+          target: production
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            NEXT_PUBLIC_API_URL=https://api.ipysy.com
+            NEXT_PUBLIC_ENVIRONMENT=production
+            NEXT_PUBLIC_VERSION=${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Verify no source maps in image (ADR-017)
+        run: |
+          docker run --rm --entrypoint sh ${{ env.IMAGE_NAME }}:latest \
+            -c 'find /app/.next/standalone -name "*.map" 2>/dev/null | head -5 | grep -q . && echo "ERRO: source maps encontrados!" && exit 1 || echo "✅ Sem source maps"'
+
+  # ============================================
+  # 3. DEPLOY NO HETZNER
+  # ============================================
+  deploy:
+    name: Deploy Hetzner
+    needs: build
+    if: |
+      needs.build.result == 'success' &&
+      (github.event_name != 'workflow_dispatch' || github.event.inputs.skip_deploy != 'true')
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+      url: https://ipysy.com
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate SSH key
+        run: |
+          if [ -z "${{ secrets.HETZNER_SSH_KEY }}" ]; then
+            echo "❌ HETZNER_SSH_KEY não configurado!"
+            echo "Vá em: GitHub > Settings > Secrets > Actions"
+            exit 1
+          fi
+
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.HETZNER_SSH_KEY }}" | tr -d '\r' > ~/.ssh/id_deploy
+          chmod 600 ~/.ssh/id_deploy
+          ssh-keyscan -H ${{ env.HETZNER_HOST }} >> ~/.ssh/known_hosts 2>/dev/null
+          eval "$(ssh-agent -s)"
+          ssh-add ~/.ssh/id_deploy
+          echo "SSH_AUTH_SOCK=$SSH_AUTH_SOCK" >> $GITHUB_ENV
+          echo "SSH_AGENT_PID=$SSH_AGENT_PID" >> $GITHUB_ENV
+
+      - name: Deploy .env.prod no servidor
+        env:
+          FRONTEND_PROD_ENV: ${{ secrets.FRONTEND_PROD_ENV }}
+        run: |
+          if [ -z "$FRONTEND_PROD_ENV" ]; then
+            echo "⚠️ FRONTEND_PROD_ENV não configurado — pulando .env.prod"
+          else
+            echo "$FRONTEND_PROD_ENV" | tr -d '\r' | \
+              ssh ${{ env.HETZNER_USER }}@${{ env.HETZNER_HOST }} \
+              "cat > ${{ env.HETZNER_DEPLOY_DIR }}/.env.prod && chmod 600 ${{ env.HETZNER_DEPLOY_DIR }}/.env.prod"
+            echo "✅ .env.prod deployado"
+          fi
+
+      - name: Criar diretório de deploy (se necessário)
+        run: |
+          ssh ${{ env.HETZNER_USER }}@${{ env.HETZNER_HOST }} \
+            "mkdir -p ${{ env.HETZNER_DEPLOY_DIR }}"
+
+      - name: Atualizar código no servidor
+        run: |
+          ssh ${{ env.HETZNER_USER }}@${{ env.HETZNER_HOST }} \
+            "cd ${{ env.HETZNER_DEPLOY_DIR }} && \
+             git stash --include-untracked || true && \
+             git fetch origin && \
+             git checkout main && \
+             git pull origin main"
+
+      - name: Login GHCR no servidor
+        run: |
+          ssh ${{ env.HETZNER_USER }}@${{ env.HETZNER_HOST }} \
+            "echo '${{ secrets.GITHUB_TOKEN }}' | docker login ghcr.io -u ${{ github.actor }} --password-stdin"
+
+      - name: Render Vault env no servidor
+        run: |
+          ssh ${{ env.HETZNER_USER }}@${{ env.HETZNER_HOST }} \
+            "cd ${{ env.HETZNER_DEPLOY_DIR }} && \
+             VAULT_TOKEN='${{ secrets.VAULT_TOKEN_FRONTEND }}' \
+             VAULT_ADDR='http://vault:8200' \
+             sh scripts/vault/render-frontend-env.sh && \
+             echo '✅ vault-runtime/.env.vault-frontend gerado'"
+
+      - name: Cleanup disco antes do deploy
+        run: |
+          ssh ${{ env.HETZNER_USER }}@${{ env.HETZNER_HOST }} \
+            "docker system prune -f && docker image prune -a -f || true"
+        continue-on-error: true
+
+      - name: Pull e restart frontend
+        run: |
+          ssh ${{ env.HETZNER_USER }}@${{ env.HETZNER_HOST }} \
+            "cd ${{ env.HETZNER_DEPLOY_DIR }} && \
+             docker compose -f docker-compose.prod.yml --env-file .env.prod pull && \
+             docker compose -f docker-compose.prod.yml --env-file .env.prod up -d --force-recreate"
+
+      - name: Health check (30s warmup)
+        run: |
+          sleep 30
+          ssh ${{ env.HETZNER_USER }}@${{ env.HETZNER_HOST }} \
+            "curl -sf http://localhost/api/health | grep -q 'ok' && echo '✅ Frontend OK' || echo '⚠️ Aquecendo...'"
+        continue-on-error: true
+
+      - name: Deployment summary
+        run: |
+          echo "## 🚀 IPYSY Frontend Deploy" >> $GITHUB_STEP_SUMMARY
+          echo "**Commit**: \`${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "**Imagem**: \`${{ env.IMAGE_NAME }}:latest\`" >> $GITHUB_STEP_SUMMARY
+          echo "**URL**: https://ipysy.com" >> $GITHUB_STEP_SUMMARY
+
+  # ============================================
+  # 4. ACIONAR CIRCLECI (fallback quando GA falha)
+  # ============================================
+  trigger-circleci:
+    name: Trigger CircleCI (fallback)
+    needs: [test, build, deploy]
+    if: |
+      failure() &&
+      github.event_name == 'push' &&
+      github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger CircleCI pipeline
+        env:
+          # Preencher após criar o projeto frontend no CircleCI
+          # GET https://circleci.com/api/v2/pipeline?org-slug=circleci/...
+          CIRCLE_PROJECT_SLUG: "__SET_CIRCLE_PROJECT_SLUG__"
+        run: |
+          RESPONSE=$(curl -s -o /tmp/cci_response.json -w "%{http_code}" \
+            -X POST "https://circleci.com/api/v2/project/${CIRCLE_PROJECT_SLUG}/pipeline" \
+            -H "Circle-Token: ${{ secrets.CIRCLE_CI_TOKEN }}" \
+            -H "Content-Type: application/json" \
+            -d '{"branch": "main"}')
+
+          echo "HTTP: $RESPONSE"
+          cat /tmp/cci_response.json
+
+          if [ "$RESPONSE" = "201" ]; then
+            echo "✅ CircleCI pipeline acionado como fallback"
+          else
+            echo "⚠️ Falha ao acionar CircleCI (HTTP $RESPONSE)"
+          fi
+        continue-on-error: true

@@ -1,0 +1,30 @@
+{
+  "common": {
+    "loading": "Carregando...",
+    "error": "Ocorreu um erro. Tente novamente.",
+    "retry": "Tentar novamente",
+    "back": "Voltar",
+    "save": "Salvar",
+    "cancel": "Cancelar",
+    "confirm": "Confirmar",
+    "close": "Fechar"
+  },
+  "auth": {
+    "login": "Entrar",
+    "logout": "Sair",
+    "signup": "Criar conta",
+    "email": "E-mail",
+    "password": "Senha"
+  },
+  "waitlist": {
+    "title": "Em breve",
+    "description": "Seja um dos primeiros a prever o futuro.",
+    "emailPlaceholder": "seu@email.com",
+    "submit": "Solicitar Acesso",
+    "submitting": "Enviando...",
+    "success": "Solicitação recebida! Você será um dos primeiros a ser convidado.",
+    "alreadyRegistered": "Você já está na lista! Você será um dos primeiros a saber.",
+    "invalidEmail": "E-mail inválido. Verifique o endereço digitado.",
+    "genericError": "Erro ao processar sua solicitação. Tente novamente."
+  }
+}

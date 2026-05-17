@@ -1,0 +1,66 @@
+# === Build / Output ===
+node_modules/
+.nuxt/
+.output/
+dist/
+.nitro/
+.cache/
+
+# === Build artifacts (nunca no Git — protege source maps)
+*.map
+# Artefatos de ofuscação temporários
+.terser-cache/
+
+# === IDE ===
+.idea/
+*.iml
+*.iws
+.project
+.classpath
+.settings/
+.vscode/
+*.swp
+*.swo
+*~
+
+# === Logs ===
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# === OS ===
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# === Environment (SEGURANÇA — nunca versionar arquivos com segredos reais)
+# .env.local  → desenvolvimento local (yarn dev)
+# .env.prod   → produção Hetzner (docker compose --env-file .env.prod)
+# Nenhum arquivo .env com segredos reais deve ser versionado.
+.env
+.env.local
+.env.prod
+.env.prod.local
+.env.staging
+.env.staging.local
+.env.runtime
+*.env
+.env.*
+
+# === Testes ===
+coverage/
+test-results/
+playwright-report/
+playwright/.cache/
+
+# === Docker runtime (gerado pelo Vault — nunca versionar) ===
+vault-runtime/*.env*
+
+# === Misc ===
+*.bak
+*.tmp
+*.temp
+.aider*
