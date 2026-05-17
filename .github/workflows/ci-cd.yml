@@ -173,11 +173,18 @@ jobs:
       - name: Atualizar código no servidor
         run: |
           ssh ${{ env.HETZNER_USER }}@${{ env.HETZNER_HOST }} \
-            "cd ${{ env.HETZNER_DEPLOY_DIR }} && \
-             git stash --include-untracked || true && \
-             git fetch origin && \
-             git checkout main && \
-             git pull origin main"
+            "if [ ! -d '${{ env.HETZNER_DEPLOY_DIR }}/.git' ]; then \
+               rm -rf ${{ env.HETZNER_DEPLOY_DIR }} && \
+               git clone https://github.com/${{ env.GHCR_OWNER }}/ipysy-frontend.git ${{ env.HETZNER_DEPLOY_DIR }} && \
+               echo '✅ Repositório clonado'; \
+             else \
+               cd ${{ env.HETZNER_DEPLOY_DIR }} && \
+               git stash --include-untracked || true && \
+               git fetch origin && \
+               git checkout main && \
+               git pull origin main && \
+               echo '✅ Repositório atualizado'; \
+             fi"
 
       - name: Login GHCR no servidor
         run: |
@@ -187,10 +194,17 @@ jobs:
       - name: Render Vault env no servidor
         run: |
           ssh ${{ env.HETZNER_USER }}@${{ env.HETZNER_HOST }} \
-            "cd ${{ env.HETZNER_DEPLOY_DIR }} && \
-             VAULT_TOKEN='${{ secrets.VAULT_TOKEN_FRONTEND }}' \
-             VAULT_ADDR='http://vault:8200' \
-             sh scripts/vault/render-frontend-env.sh && \
+            "mkdir -p ${{ env.HETZNER_DEPLOY_DIR }}/vault-runtime && \
+             sed -i 's/\r//' ${{ env.HETZNER_DEPLOY_DIR }}/scripts/vault/render-frontend-env.sh && \
+             docker run --rm \
+               --network ipysy-backend_ipysy-net \
+               -e VAULT_ADDR=http://vault:8200 \
+               -e VAULT_TOKEN='${{ secrets.VAULT_TOKEN_FRONTEND }}' \
+               -e RUNTIME_FILE=/vault-runtime/.env.vault-frontend \
+               -v ${{ env.HETZNER_DEPLOY_DIR }}/scripts/vault/render-frontend-env.sh:/render-frontend-env.sh \
+               -v ${{ env.HETZNER_DEPLOY_DIR }}/vault-runtime:/vault-runtime \
+               hashicorp/vault:latest \
+               sh /render-frontend-env.sh && \
              echo '✅ vault-runtime/.env.vault-frontend gerado'"
 
       - name: Cleanup disco antes do deploy
