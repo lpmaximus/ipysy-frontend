@@ -2,9 +2,7 @@ import type { Config } from 'tailwindcss'
 
 const config: Config = {
   content: [
-    './app/**/*.{js,ts,jsx,tsx,mdx}',
-    './components/**/*.{js,ts,jsx,tsx,mdx}',
-    './lib/**/*.{js,ts,jsx,tsx,mdx}',
+    './src/**/*.{js,ts,jsx,tsx,mdx}',
   ],
   theme: {
     extend: {
@@ -23,9 +21,21 @@ const config: Config = {
           900: '#312e81',
           950: '#1e1b4b',
         },
+        // Dourado IPYSY
+        gold: {
+          DEFAULT: '#9A7B2E',
+          light: '#C4A255',
+          dark: '#6B5520',
+        },
+        // Background escuro
+        surface: {
+          DEFAULT: '#0F1923',
+          raised: '#162130',
+        },
       },
       fontFamily: {
         sans: ['var(--font-inter)', 'system-ui', 'sans-serif'],
+        serif: ['var(--font-playfair)', 'Georgia', 'serif'],
         mono: ['var(--font-mono)', 'monospace'],
       },
       animation: {
