@@ -27,6 +27,21 @@ const nextConfig: NextConfig = {
         : false,
   },
 
+  // Webpack: fallback para módulos Node.js não disponíveis no browser
+  // Necessário para pacotes OTel que têm paths Node.js e browser
+  webpack: (config, { isServer }) => {
+    if (!isServer) {
+      config.resolve.fallback = {
+        ...config.resolve.fallback,
+        fs: false,
+        path: false,
+        os: false,
+        module: false,
+      }
+    }
+    return config
+  },
+
   // Headers de segurança
   async headers() {
     return [

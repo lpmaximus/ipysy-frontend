@@ -2,7 +2,7 @@
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
-import { useState, type ReactNode } from 'react'
+import { useState, useEffect, type ReactNode } from 'react'
 
 function makeQueryClient() {
   return new QueryClient({
@@ -36,6 +36,11 @@ function getQueryClient() {
 
 export function Providers({ children }: { children: ReactNode }) {
   const [queryClient] = useState(() => getQueryClient())
+
+  useEffect(() => {
+    // OTel SDK Web: inicialização lazy no browser (apenas produção)
+    import('@/lib/telemetry/otel').then(({ initOtel }) => initOtel())
+  }, [])
 
   return (
     <QueryClientProvider client={queryClient}>

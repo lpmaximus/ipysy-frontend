@@ -7,6 +7,34 @@ Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/).
 
 ## [Unreleased]
 
+### Added (Sessão 11 — OTel SDK Web End-to-End — 2026-05-19)
+
+- **`src/lib/telemetry/otel.ts`** — inicialização do OpenTelemetry SDK Web no browser:
+  - Ativo apenas em produção (`NEXT_PUBLIC_ENVIRONMENT === 'production'`)
+  - Propagador W3C TraceContext + W3C Baggage
+  - `FetchInstrumentation`: injeta `traceparent` automaticamente em todas as requisições fetch
+  - Exportador OTLP HTTP → `/api/telemetry/traces` (proxy BFF, sem CORS)
+  - Inicializado via dynamic import em `providers.tsx` (nunca no SSR)
+- **`src/app/api/telemetry/traces/route.ts`** — proxy OTLP Next.js Route Handler:
+  - Recebe traces do browser (same-origin) e repassa para `otel-collector:4318`
+  - Controlado por `OTEL_COLLECTOR_HTTP_URL` (vazio = desativado silenciosamente em dev)
+  - Falha graciosa: telemetria nunca quebra a aplicação (retorna 200 sempre)
+- **`FORWARDED_HEADERS`** em `api-client.ts` — adicionados `traceparent`, `tracestate`, `baggage`:
+  - Propaga contexto W3C do browser → BFF → Java Gateway (mesmo traceId no SigNoz)
+- **`docs/technical/OBSERVABILITY.md`** — documentação completa da arquitetura OTel:
+  - Diagrama de fluxo end-to-end
+  - Como verificar no SigNoz, ClickHouse e DevTools
+  - Guia de troubleshooting
+- **`next.config.ts`** — webpack fallback para módulos Node.js (fs, path, os, module) no browser bundle
+
+### Changed (Sessão 11)
+
+- `src/app/providers.tsx` — `useEffect` para inicializar OTel SDK Web no mount (browser only)
+- `.env` — adicionado `OTEL_COLLECTOR_HTTP_URL=` (vazio em dev)
+- `.env.prod` — adicionado `OTEL_COLLECTOR_HTTP_URL=http://otel-collector:4318`
+
+---
+
 ### Added (Sessão 10 — Route Groups + Layout Isolation — 2026-05-18)
 
 - Route groups Next.js App Router — 3 áreas **completamente isoladas** (sem compartilhamento de layout):
