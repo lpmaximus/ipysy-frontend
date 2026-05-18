@@ -14,6 +14,8 @@ Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/).
   - Propagador W3C TraceContext + W3C Baggage
   - `FetchInstrumentation`: injeta `traceparent` automaticamente em todas as requisições fetch
   - Exportador OTLP HTTP → `/api/telemetry/traces` (proxy BFF, sem CORS)
+  - `setOtelUserContext(userId, traceSessionId)`: propaga identidade do usuário no W3C Baggage
+  - `clearOtelUserContext()`: limpa baggage no logout
   - Inicializado via dynamic import em `providers.tsx` (nunca no SSR)
 - **`src/app/api/telemetry/traces/route.ts`** — proxy OTLP Next.js Route Handler:
   - Recebe traces do browser (same-origin) e repassa para `otel-collector:4318`
@@ -21,17 +23,19 @@ Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/).
   - Falha graciosa: telemetria nunca quebra a aplicação (retorna 200 sempre)
 - **`FORWARDED_HEADERS`** em `api-client.ts` — adicionados `traceparent`, `tracestate`, `baggage`:
   - Propaga contexto W3C do browser → BFF → Java Gateway (mesmo traceId no SigNoz)
-- **`docs/technical/OBSERVABILITY.md`** — documentação completa da arquitetura OTel:
-  - Diagrama de fluxo end-to-end
-  - Como verificar no SigNoz, ClickHouse e DevTools
-  - Guia de troubleshooting
+- **`src/stores/auth.ts`** — campo `traceSessionId`:
+  - `crypto.randomUUID()` gerado a cada login — distingue 2 browsers do mesmo usuário no OTel
+  - Propagado como `baggage: userId=X,traceSessionId=Y` em todas as requisições autenticadas
+- **`docs/technical/OBSERVABILITY.md`** — documentação completa da arquitetura OTel
 - **`next.config.ts`** — webpack fallback para módulos Node.js (fs, path, os, module) no browser bundle
 
 ### Changed (Sessão 11)
 
-- `src/app/providers.tsx` — `useEffect` para inicializar OTel SDK Web no mount (browser only)
+- `src/app/providers.tsx` — `useEffect` para initOtel() + subscribe ao auth store para setOtelUserContext()
 - `.env` — adicionado `OTEL_COLLECTOR_HTTP_URL=` (vazio em dev)
 - `.env.prod` — adicionado `OTEL_COLLECTOR_HTTP_URL=http://otel-collector:4318`
+
+> **Ação necessária**: atualizar secret `PROD_ENV` no GitHub Actions com o novo valor `OTEL_COLLECTOR_HTTP_URL=http://otel-collector:4318`
 
 ---
 

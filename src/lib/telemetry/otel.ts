@@ -1,3 +1,5 @@
+import type { Context } from '@opentelemetry/api'
+import { propagation, context, trace } from '@opentelemetry/api'
 import { WebTracerProvider, BatchSpanProcessor } from '@opentelemetry/sdk-trace-web'
 import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http'
 import { registerInstrumentations } from '@opentelemetry/instrumentation'
@@ -60,4 +62,57 @@ export function initOtel(): void {
       }),
     ],
   })
+}
+
+// ─── Identidade do usuário em Baggage ─────────────────────────────────────────
+
+/**
+ * Define o contexto do usuário autenticado no W3C Baggage OTel.
+ *
+ * O Baggage é propagado em TODAS as requisições fetch após esse ponto via
+ * header `baggage: userId=123,traceSessionId=uuid,...`.
+ *
+ * - `userId`: identifica QUE usuário fez a requisição
+ * - `traceSessionId`: UUID único por login — distingue 2 browsers do MESMO usuário
+ *   (ex: user 42 logado no Chrome e no Safari terão traceSessionIds diferentes)
+ *
+ * Uso: chamar após setAuth() no Zustand store (login ou hidratação de sessão).
+ *
+ * Nunca armazena o accessToken (Phantom Token) — apenas identificadores de rastreio.
+ */
+export function setOtelUserContext(userId: string, traceSessionId: string): void {
+  if (typeof window === 'undefined') return
+  if (process.env.NEXT_PUBLIC_ENVIRONMENT !== 'production') return
+
+  const baggage = propagation.createBaggage({
+    userId: { value: userId },
+    traceSessionId: { value: traceSessionId },
+  })
+
+  // Ativa o baggage como contexto ativo para todos os spans e fetches futuros
+  const ctx: Context = propagation.setBaggage(context.active(), baggage)
+  context.with(ctx, () => {
+    // Context ativo — FetchInstrumentation propagará baggage em todos os fetches
+  })
+
+  // Injeta no tracer ativo para spans manuais futuros
+  const tracer = trace.getTracer('ipysy-frontend')
+  const span = tracer.startSpan('user.identified', {
+    attributes: {
+      'user.id': userId,
+      'session.trace_id': traceSessionId,
+    },
+  })
+  span.end()
+}
+
+/**
+ * Limpa o contexto do usuário do Baggage (logout).
+ */
+export function clearOtelUserContext(): void {
+  if (typeof window === 'undefined') return
+  if (process.env.NEXT_PUBLIC_ENVIRONMENT !== 'production') return
+
+  const ctx: Context = propagation.setBaggage(context.active(), propagation.createBaggage())
+  context.with(ctx, () => {})
 }

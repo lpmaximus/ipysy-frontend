@@ -3,6 +3,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
 import { useState, useEffect, type ReactNode } from 'react'
+import { useAuthStore } from '@/stores/auth'
 
 function makeQueryClient() {
   return new QueryClient({
@@ -36,11 +37,21 @@ function getQueryClient() {
 
 export function Providers({ children }: { children: ReactNode }) {
   const [queryClient] = useState(() => getQueryClient())
+  const user = useAuthStore((s) => s.user)
+  const traceSessionId = useAuthStore((s) => s.traceSessionId)
 
   useEffect(() => {
     // OTel SDK Web: inicialização lazy no browser (apenas produção)
     import('@/lib/telemetry/otel').then(({ initOtel }) => initOtel())
   }, [])
+
+  useEffect(() => {
+    // Propaga identidade do usuário logado no W3C Baggage (apenas produção)
+    if (!user || !traceSessionId) return
+    import('@/lib/telemetry/otel').then(({ setOtelUserContext }) => {
+      setOtelUserContext(user.id, traceSessionId)
+    })
+  }, [user?.id, traceSessionId])
 
   return (
     <QueryClientProvider client={queryClient}>
