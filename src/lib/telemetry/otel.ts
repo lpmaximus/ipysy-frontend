@@ -51,10 +51,12 @@ export function initOtel(): void {
   registerInstrumentations({
     instrumentations: [
       getWebAutoInstrumentations({
-        // Auto-injeta traceparent em todas as chamadas fetch → BFF → Java Gateway
+        // Injeta traceparent em TODOS os fetches (same-origin e cross-origin)
         '@opentelemetry/instrumentation-fetch': {
           propagateTraceHeaderCorsUrls: [/.*/],
           clearTimingResources: true,
+          // Evita instrumentar o próprio endpoint OTLP (loop infinito)
+          ignoreUrls: [/\/api\/telemetry/],
         },
         '@opentelemetry/instrumentation-document-load': {},
         '@opentelemetry/instrumentation-user-interaction': { enabled: false },
