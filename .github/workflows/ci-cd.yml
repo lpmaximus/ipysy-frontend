@@ -214,12 +214,12 @@ jobs:
             "docker system prune -f && docker image prune -a -f || true"
         continue-on-error: true
 
-      - name: Garantir rede ipysy-net
+      - name: Garantir rede ipysy-backend_ipysy-net
         run: |
           ssh ${{ env.HETZNER_USER }}@${{ env.HETZNER_HOST }} \
-            "docker network inspect ipysy-net >/dev/null 2>&1 \
-               && echo '✅ Rede ipysy-net já existe' \
-               || (docker network create --driver bridge ipysy-net && echo '✅ Rede ipysy-net criada')"
+            "docker network inspect ipysy-backend_ipysy-net >/dev/null 2>&1 \
+               && echo '✅ Rede ipysy-backend_ipysy-net já existe' \
+               || (docker network create --driver bridge ipysy-backend_ipysy-net && echo '✅ Rede ipysy-backend_ipysy-net criada (backend offline)')"
 
       - name: Pull e restart frontend
         run: |
