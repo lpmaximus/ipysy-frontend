@@ -1,6 +1,6 @@
 import type { Context } from '@opentelemetry/api'
 import { propagation, context, trace } from '@opentelemetry/api'
-import { WebTracerProvider, BatchSpanProcessor } from '@opentelemetry/sdk-trace-web'
+import { WebTracerProvider, SimpleSpanProcessor } from '@opentelemetry/sdk-trace-web'
 import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http'
 import { registerInstrumentations } from '@opentelemetry/instrumentation'
 import { getWebAutoInstrumentations } from '@opentelemetry/auto-instrumentations-web'
@@ -40,7 +40,7 @@ export function initOtel(): void {
   const exporter = new OTLPTraceExporter({ url: '/api/telemetry/traces' })
 
   const provider = new WebTracerProvider({ resource })
-  provider.addSpanProcessor(new BatchSpanProcessor(exporter))
+  provider.addSpanProcessor(new SimpleSpanProcessor(exporter))
 
   provider.register({
     propagator: new CompositePropagator({
