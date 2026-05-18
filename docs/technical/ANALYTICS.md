@@ -29,23 +29,25 @@ export default function RootLayout({ children }) {
   return (
     <html>
       <body>{children}</body>
-      {process.env.NEXT_PUBLIC_GA_ID && (
-        <GoogleAnalytics gaId={process.env.NEXT_PUBLIC_GA_ID} />
-      )}
+      {process.env.NEXT_PUBLIC_GA_ID &&
+        process.env.NEXT_PUBLIC_ENVIRONMENT === 'production' && (
+          <GoogleAnalytics gaId={process.env.NEXT_PUBLIC_GA_ID} />
+        )}
     </html>
   )
 }
 ```
 
 - Carrega o script `afterInteractive` — não bloqueia o First Contentful Paint
-- Só ativa quando `NEXT_PUBLIC_GA_ID` está definido (seguro em dev/CI)
+- **Proteção dupla**: só ativa quando `NEXT_PUBLIC_GA_ID` está definido **e** `NEXT_PUBLIC_ENVIRONMENT === 'production'`
+- Dev local nunca contamina dados de produção, mesmo com o ID configurado por engano
 
 ### Variável de Ambiente
 
-| Ambiente | Valor |
-|----------|-------|
-| Desenvolvimento (`.env`) | vazio — GA não carrega |
-| Produção (`PROD_ENV` secret) | `G-HPE889SHK4` |
+| Ambiente | `NEXT_PUBLIC_GA_ID` | `NEXT_PUBLIC_ENVIRONMENT` | GA carrega? |
+|----------|--------------------|-----------------------------|-------------|
+| Desenvolvimento (`.env`) | vazio | `development` | ❌ Não |
+| Produção (`PROD_ENV` secret) | `G-HPE889SHK4` | `production` | ✅ Sim |
 
 ---
 

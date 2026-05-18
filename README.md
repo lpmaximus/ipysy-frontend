@@ -177,57 +177,67 @@ docker compose -f docker-compose.prod.yml --env-file .env.prod up -d
 ```
 ipysy-frontend/
 │
-├── app/                          # Next.js App Router
-│   ├── layout.tsx                # Layout raiz — providers, fonte Inter, metadata SEO
-│   ├── page.tsx                  # GET /  →  redirect 307 /coming-soon
-│   ├── icon.svg                  # Favicon IPYSY (auto-detectado pelo App Router)
-│   ├── error.tsx                 # Error boundary global (Client Component)
-│   ├── not-found.tsx             # Página 404
+├── src/
+│   ├── app/                          # Next.js App Router
+│   │   ├── layout.tsx                # Layout raiz — fonts, GA4, Providers, metadata SEO
+│   │   ├── page.tsx                  # GET /  →  redirect 307 /coming-soon
+│   │   ├── providers.tsx             # TanStack Query + ReactQueryDevtools
+│   │   ├── icon.svg                  # Favicon IPYSY (auto-detectado pelo App Router)
+│   │   ├── error.tsx                 # Error boundary global (Client Component)
+│   │   ├── not-found.tsx             # Página 404
+│   │   │
+│   │   ├── (coming-soon)/            # Route group — área TEMPORÁRIA (Coming Soon)
+│   │   │   ├── layout.tsx            # Layout isolado, sem header/footer — será descartado
+│   │   │   └── coming-soon/
+│   │   │       └── page.tsx          # GET /coming-soon — editorial dark + waitlist (100% Tailwind)
+│   │   │
+│   │   ├── (public)/                 # Route group — área PÚBLICA ipysy.com (B1+)
+│   │   │   └── layout.tsx            # Placeholder — header/footer públicos virão aqui
+│   │   │
+│   │   ├── (app)/                    # Route group — área RESTRITA app.ipysy.com (B2+)
+│   │   │   └── layout.tsx            # Placeholder — sidebar + AuthGuard virão aqui
+│   │   │
+│   │   └── api/
+│   │       ├── health/
+│   │       │   └── route.ts          # GET  /api/health     — Docker HEALTHCHECK
+│   │       └── waitlist/
+│   │           └── route.ts          # POST /api/waitlist   — proxy → Gateway /api/v1/users/waitlist
 │   │
-│   ├── coming-soon/
-│   │   └── page.tsx              # GET /coming-soon — página editorial dark + waitlist
+│   ├── types/                       # Modelos / DTOs (interfaces puras — sem lógica)
+│   │   ├── index.ts                  # Barrel re-export central
+│   │   ├── device/
+│   │   │   └── device-info.ts        # DeviceInfo — interface web + mobile compartilhada
+│   │   └── common/
+│   │       └── api.ts                # ApiError, PageResponse<T>, PageRequest
 │   │
-│   └── api/
-│       ├── health/
-│       │   └── route.ts          # GET  /api/health     — Docker HEALTHCHECK
-│       └── waitlist/
-│           └── route.ts          # POST /api/waitlist   — proxy → Gateway /api/v1/users/waitlist
-│
-├── types/                       # Modelos / DTOs (interfaces puras — sem lógica)
-│   ├── index.ts                  # Barrel re-export central
-│   ├── device/
-│   │   └── device-info.ts        # DeviceInfo — interface web + mobile compartilhada
-│   └── common/
-│       └── api.ts                # ApiError, PageResponse<T>, PageRequest
-│
-├── lib/                     # Lógica de serviços e infraestrutura HTTP
-│   ├── http/
-│   │   ├── http-client.ts        # HttpClient — pipeline de middlewares (chain-of-responsibility)
-│   │   │                         #   └─ deviceInfoMiddleware registrado automaticamente
-│   │   ├── api-client.ts         # ApiClient — client server-side (BFF → Java Gateway)
-│   │   │                         #   └─ métodos: get/post/put/patch/delete + fetch genérico
-│   │   └── index.ts              # Barrel (⚠️ não importar direto — use os caminhos abaixo)
-│   │                             #   Client Components → @/lib/http/http-client
-│   │                             #   Route Handlers   → @/lib/http/api-client
-│   ├── device/
-│   │   └── device-info.ts        # Strategy Pattern — DeviceInfoProvider
-│   │                             #   ├─ WebDeviceInfoProvider (auto-registrado no browser)
-│   │                             #   └─ registerDeviceInfoProvider() (troca para React Native)
-│   ├── providers/
-│   │   └── index.tsx             # TanStack Query QueryClientProvider + ReactQueryDevtools
+│   ├── lib/                     # Lógica de serviços e infraestrutura HTTP
+│   │   ├── http/
+│   │   │   ├── http-client.ts        # HttpClient — pipeline de middlewares (chain-of-responsibility)
+│   │   │   │                         #   └─ deviceInfoMiddleware registrado automaticamente
+│   │   │   ├── api-client.ts         # ApiClient — client server-side (BFF → Java Gateway)
+│   │   │   │                         #   └─ métodos: get/post/put/patch/delete + fetch genérico
+│   │   │   └── index.ts              # Barrel (⚠️ não importar direto — use os caminhos abaixo)
+│   │   │                             #   Client Components → @/lib/http/http-client
+│   │   │                             #   Route Handlers   → @/lib/http/api-client
+│   │   ├── device/
+│   │   │   └── device-info.ts        # Strategy Pattern — DeviceInfoProvider
+│   │   │                             #   ├─ WebDeviceInfoProvider (auto-registrado no browser)
+│   │   │                             #   └─ registerDeviceInfoProvider() (troca para React Native)
+│   │   ├── providers/
+│   │   │   └── index.tsx             # TanStack Query QueryClientProvider + ReactQueryDevtools
+│   │   ├── utils.ts                  # cn() helper — clsx + tailwind-merge (padrão shadcn/ui)
+│   │   │
+│   │   └── api/                      # Clientes tipados por domínio + endpoints centralizados
+│   │       ├── endpoints.ts          # API.* — todos os ~50 endpoints dos 20 microserviços
+│   │       └── waitlist.ts           # registerWaitlist() — mapeamento completo de status HTTP
 │   │
-│   └── api/                      # Clientes tipados por domínio (usam httpClient) + endpoints centralizados
-│       ├── endpoints.ts          # API.* — todos os ~50 endpoints dos 20 microserviços (BASE → SERVICE → API)
-│       └── waitlist.ts           # registerWaitlist() — mapeamento completo de status HTTP
-│
-├── stores/                       # Zustand stores (sem persistência — Phantom Token)
-│   └── auth.ts                   # accessToken em memória; nunca em localStorage/cookie
-│
-├── components/                   # Componentes React reutilizáveis (a popular no Sprint 1)
-│
-├── assets/
-│   └── css/
-│       └── main.css              # Tailwind CSS base + utilities globais
+│   ├── stores/                       # Zustand stores (sem persistência — Phantom Token)
+│   │   └── auth.ts                   # accessToken em memória; nunca em localStorage/cookie
+│   │
+│   ├── components/                   # Componentes React reutilizáveis (a popular no Sprint 1)
+│   │
+│   └── styles/
+│       └── main.css                  # Tailwind CSS base + utilities globais
 │
 ├── tests/
 │   ├── setup.ts                  # Vitest setup — @testing-library/jest-dom
@@ -250,7 +260,9 @@ ipysy-frontend/
 ├── docs/
 │   ├── README.md                 # Índice da documentação
 │   ├── technical/
-│   │   └── HTTP-CLIENT.md        # Infraestrutura HTTP — middleware pipeline + device-info
+│   │   ├── HTTP-CLIENT.md        # Infraestrutura HTTP — middleware pipeline + device-info
+│   │   ├── BFF-PATTERN.md        # Padrão BFF — como o frontend se comunica com o backend
+│   │   └── ANALYTICS.md          # Google Analytics 4 — implementação, eventos, LGPD
 │   └── business-docs/            # 40 documentos de negócio importados
 │       ├── prd/                  # PRD-001, PRD-002 (mapa telas), PRD-003 (stack aprovada)
 │       ├── adr/                  # ADR-006 a ADR-017
@@ -268,7 +280,7 @@ ipysy-frontend/
 ├── docker-compose.infrastructure.yml  # Nginx proxy local
 ├── Dockerfile                    # Multi-stage: builder → runner (Next.js standalone)
 ├── next.config.ts                # standalone output, headers de segurança, SWC removeConsole
-├── tailwind.config.ts            # Tema IPYSY — dark navy, dourado, animações
+├── tailwind.config.ts            # Tema IPYSY — gold (#9A7B2E), surface (#0F1923), mobile-first
 ├── vitest.config.ts              # Testes unitários — happy-dom + coverage v8
 ├── playwright.config.ts          # Testes E2E — Chromium + Mobile Chrome
 └── tsconfig.json                 # TypeScript strict + aliases @/*
@@ -287,6 +299,8 @@ ipysy-frontend/
 
 ## 📝 Convenções
 
+- **Responsividade**: **obrigatória** em todas as telas — verificar mobile antes de qualquer entrega
+- **Route Groups**: 3 áreas isoladas `(coming-soon)` · `(public)` · `(app)` — sem compartilhamento de layout entre elas
 - **Idioma**: todo código, commits e documentação em pt-BR
 - **Commits**: `tipo(escopo): descrição (p2-XX)` seguindo o padrão do backend
 - **Docs**: nunca criar `.md` na raiz — sempre em `docs/`

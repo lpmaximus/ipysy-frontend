@@ -7,13 +7,38 @@ Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/).
 
 ## [Unreleased]
 
+### Added (Sessão 10 — Route Groups + Layout Isolation — 2026-05-18)
+
+- Route groups Next.js App Router — 3 áreas **completamente isoladas** (sem compartilhamento de layout):
+  - `src/app/(coming-soon)/layout.tsx` — layout temporário do Coming Soon; sem header/footer; será descartado quando app entrar em produção
+  - `src/app/(public)/layout.tsx` — placeholder área pública `ipysy.com` (B1+); header/footer públicos virão aqui
+  - `src/app/(app)/layout.tsx` — placeholder área restrita `app.ipysy.com` (B2+); sidebar e AuthGuard virão aqui
+- `src/lib/utils.ts` — `cn()` helper (clsx + tailwind-merge); padrão obrigatório para todo componente com classes condicionais (padrão shadcn/ui)
+- **Requisito de responsividade**: obrigatório em **todas** as entregas futuras — verificar mobile antes de considerar qualquer tarefa concluída
+
+### Fixed (Sessão 10 — Tailwind + Responsividade — 2026-05-18)
+
+- `tailwind.config.ts` — **bug crítico corrigido**: content path estava como `./app/**` mas arquivos ficam em `./src/app/**`; Tailwind não escaneava nenhum arquivo → zero classes CSS geradas no bundle. Corrigido para `./src/**`
+- `tailwind.config.ts` — cores semânticas adicionadas: `gold` (`DEFAULT: #9A7B2E`) e `surface` (`DEFAULT: #0F1923`); `font-serif` mapeado para `var(--font-playfair)`
+- `src/app/(coming-soon)/coming-soon/page.tsx` — coming-soon reescrito 100% Tailwind CSS, mobile-first, grid adaptativo, tipografia fluida — **sem inline styles**
+
+### Fixed (Sessão 10 — GA4 Proteção Dupla — 2026-05-18)
+
+- `src/app/layout.tsx` — GA4 agora exige **dupla condição**: `NEXT_PUBLIC_GA_ID` definido **E** `NEXT_PUBLIC_ENVIRONMENT === 'production'`; previne rastreamento acidental mesmo que o ID seja configurado localmente por engano
+
+### Removed (Sessão 10 — 2026-05-18)
+
+- `src/app/coming-soon/page.tsx` — substituído por `src/app/(coming-soon)/coming-soon/page.tsx` dentro do route group isolado
+
+---
+
 ### Added (Sessão 08 — Google Analytics 4 — 2026-05-17)
 
 - `@next/third-parties@16.2.6` — lib oficial Next.js 15 para integração de terceiros com otimização de performance
 - `app/layout.tsx` — `<GoogleAnalytics gaId={NEXT_PUBLIC_GA_ID} />` no layout raiz (carrega `afterInteractive`, não bloqueia render)
 - `NEXT_PUBLIC_GA_ID` — variável de ambiente adicionada em `.env` (vazia em dev) e no secret `PROD_ENV` do GitHub
 - Measurement ID de produção: `G-HPE889SHK4` (propriedade "IPYSY" no Google Analytics 4)
-- GA só ativa quando `NEXT_PUBLIC_GA_ID` está definido — seguro em dev/CI
+- GA só ativa quando `NEXT_PUBLIC_GA_ID` está definido **e** `NEXT_PUBLIC_ENVIRONMENT === 'production'` (proteção dupla)
 
 ### Fixed (Sessão 08 — Infra — 2026-05-17)
 
