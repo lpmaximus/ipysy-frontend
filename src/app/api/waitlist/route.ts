@@ -6,6 +6,11 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
 
+    // [DIAGNÓSTICO TEMPORÁRIO] — remover após confirmar propagação OTel
+    const tp = request.headers.get('traceparent')
+    const ts = request.headers.get('tracestate')
+    console.log(`[WAITLIST] traceparent=${tp ?? 'AUSENTE'} tracestate=${ts ?? 'AUSENTE'}`)
+
     const res = await apiClient.post(API.users.waitlist, body)
 
     const data = await res.json()
