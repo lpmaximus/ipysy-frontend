@@ -13,6 +13,9 @@ const FORWARDED_HEADERS = [
   'authorization',   // Phantom Token — Bearer <uuid>
   'x-request-id',   // rastreabilidade distribuída
   'accept-language', // i18n — pt-BR / en-US
+  'traceparent',     // W3C Trace Context — propaga trace do browser ao Java Gateway
+  'tracestate',      // W3C Trace Context — vendor-specific trace state
+  'baggage',         // W3C Baggage — contexto adicional propagado
 ] as const
 
 // ─── ApiClient ────────────────────────────────────────────────────────────────

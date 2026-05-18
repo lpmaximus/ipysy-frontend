@@ -23,6 +23,13 @@ interface AuthState {
   isAuthenticated: boolean
   isHydrated: boolean
 
+  /**
+   * UUID único por sessão de login — distingue 2 browsers do mesmo usuário no OTel.
+   * Gerado via crypto.randomUUID() a cada setAuth() — nunca persistido.
+   * Propagado no W3C Baggage para rastreabilidade end-to-end no SigNoz.
+   */
+  traceSessionId: string | null
+
   // Actions
   setAuth: (token: string, user: User) => void
   clearAuth: () => void
@@ -34,12 +41,19 @@ export const useAuthStore = create<AuthState>()((set) => ({
   user: null,
   isAuthenticated: false,
   isHydrated: false,
+  traceSessionId: null,
 
   setAuth: (accessToken, user) =>
-    set({ accessToken, user, isAuthenticated: true }),
+    set({
+      accessToken,
+      user,
+      isAuthenticated: true,
+      // UUID único por login — mesmo usuário em 2 browsers terá traceSessionIds distintos
+      traceSessionId: typeof crypto !== 'undefined' ? crypto.randomUUID() : null,
+    }),
 
   clearAuth: () =>
-    set({ accessToken: null, user: null, isAuthenticated: false }),
+    set({ accessToken: null, user: null, isAuthenticated: false, traceSessionId: null }),
 
   setHydrated: (isHydrated) => set({ isHydrated }),
 }))
