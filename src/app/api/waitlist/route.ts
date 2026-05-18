@@ -9,7 +9,7 @@ export async function POST(request: NextRequest) {
     // [DIAGNÓSTICO TEMPORÁRIO] — remover após confirmar propagação OTel
     const tp = request.headers.get('traceparent')
     const ts = request.headers.get('tracestate')
-    console.log(`[WAITLIST] traceparent=${tp ?? 'AUSENTE'} tracestate=${ts ?? 'AUSENTE'}`)
+    console.warn(`[WAITLIST] traceparent=${tp ?? 'AUSENTE'} tracestate=${ts ?? 'AUSENTE'}`) // diagnóstico temporário — removeConsole exclui warn
 
     const res = await apiClient.post(API.users.waitlist, body)
 
