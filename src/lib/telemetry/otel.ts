@@ -1,9 +1,7 @@
 import type { Context } from '@opentelemetry/api'
 import { propagation, context, trace } from '@opentelemetry/api'
-import { WebTracerProvider, SimpleSpanProcessor } from '@opentelemetry/sdk-trace-web'
+import { WebTracerProvider, SimpleSpanProcessor, StackContextManager } from '@opentelemetry/sdk-trace-web'
 import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http'
-import { registerInstrumentations } from '@opentelemetry/instrumentation'
-import { FetchInstrumentation } from '@opentelemetry/instrumentation-fetch'
 import { W3CTraceContextPropagator, W3CBaggagePropagator, CompositePropagator } from '@opentelemetry/core'
 import { Resource } from '@opentelemetry/resources'
 import { ATTR_SERVICE_NAME, ATTR_SERVICE_VERSION } from '@opentelemetry/semantic-conventions'
@@ -45,23 +43,10 @@ export function initOtel(): void {
   })
 
   provider.register({
+    contextManager: new StackContextManager(),
     propagator: new CompositePropagator({
       propagators: [new W3CTraceContextPropagator(), new W3CBaggagePropagator()],
     }),
-  })
-
-  registerInstrumentations({
-    instrumentations: [
-      // FetchInstrumentation direta — mais confiável que getWebAutoInstrumentations
-      // para garantir que window.fetch seja patchado antes da primeira requisição
-      new FetchInstrumentation({
-        // Injeta traceparent em TODOS os fetches (same-origin e cross-origin)
-        propagateTraceHeaderCorsUrls: [/.*/],
-        clearTimingResources: true,
-        // Evita instrumentar o próprio endpoint OTLP (loop infinito)
-        ignoreUrls: [/\/api\/telemetry/],
-      }),
-    ],
   })
 }
 

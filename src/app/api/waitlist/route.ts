@@ -9,7 +9,10 @@ export async function POST(request: NextRequest) {
     // [DIAGNÓSTICO TEMPORÁRIO] — remover após confirmar propagação OTel
     const tp = request.headers.get('traceparent')
     const ts = request.headers.get('tracestate')
-    console.warn(`[WAITLIST] traceparent=${tp ?? 'AUSENTE'} tracestate=${ts ?? 'AUSENTE'}`) // diagnóstico temporário — removeConsole exclui warn
+    const allHeaders: Record<string, string> = {}
+    request.headers.forEach((value, key) => { allHeaders[key] = value })
+    console.warn(`[WAITLIST] traceparent=${tp ?? 'AUSENTE'} tracestate=${ts ?? 'AUSENTE'}`)
+    console.warn(`[WAITLIST] ALL_HEADERS=${JSON.stringify(allHeaders)}`)
 
     const res = await apiClient.post(API.users.waitlist, body)
 
