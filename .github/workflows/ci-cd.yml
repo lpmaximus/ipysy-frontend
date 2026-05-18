@@ -109,6 +109,7 @@ jobs:
             NEXT_PUBLIC_API_URL=https://api.ipysy.com
             NEXT_PUBLIC_ENVIRONMENT=production
             NEXT_PUBLIC_VERSION=${{ github.sha }}
+            NEXT_PUBLIC_GA_ID=G-HPE889SHK4
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
