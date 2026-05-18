@@ -4,7 +4,14 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
 import { useState, useEffect, type ReactNode } from 'react'
 import { useAuthStore } from '@/stores/auth'
-import { initOtel, setOtelUserContext } from '@/lib/telemetry/otel'
+
+// Inicia o carregamento do bundle OTel imediatamente quando o módulo é avaliado
+// pelo browser — antes do primeiro render e do useEffect, reduzindo a janela
+// de race condition onde o usuário submete o form antes do FetchInstrumentation
+// patchar window.fetch. Guarda SSR-safe: typeof window === 'undefined' no servidor.
+if (typeof window !== 'undefined') {
+  import('@/lib/telemetry/otel').then(({ initOtel }) => initOtel())
+}
 
 function makeQueryClient() {
   return new QueryClient({
@@ -42,15 +49,16 @@ export function Providers({ children }: { children: ReactNode }) {
   const traceSessionId = useAuthStore((s) => s.traceSessionId)
 
   useEffect(() => {
-    // Import estático garante que FetchInstrumentation patcha window.fetch
-    // imediatamente no mount, eliminando a race condition com submissões rápidas
-    initOtel()
+    // Garante inicialização caso o módulo ainda não tenha carregado (idempotente)
+    import('@/lib/telemetry/otel').then(({ initOtel }) => initOtel())
   }, [])
 
   useEffect(() => {
     // Propaga identidade do usuário logado no W3C Baggage (apenas produção)
     if (!user || !traceSessionId) return
-    setOtelUserContext(user.id, traceSessionId)
+    import('@/lib/telemetry/otel').then(({ setOtelUserContext }) => {
+      setOtelUserContext(user.id, traceSessionId)
+    })
   }, [user?.id, traceSessionId])
 
   return (
