@@ -39,8 +39,10 @@ export function initOtel(): void {
   // Exporta para o proxy BFF (same-origin → sem CORS), que repassa ao otel-collector:4318
   const exporter = new OTLPTraceExporter({ url: '/api/telemetry/traces' })
 
-  const provider = new WebTracerProvider({ resource })
-  provider.addSpanProcessor(new SimpleSpanProcessor(exporter))
+  const provider = new WebTracerProvider({
+    resource,
+    spanProcessors: [new SimpleSpanProcessor(exporter)],
+  })
 
   provider.register({
     propagator: new CompositePropagator({
