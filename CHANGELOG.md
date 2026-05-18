@@ -7,6 +7,38 @@ Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/).
 
 ## [Unreleased]
 
+### Added (Sessão 11 — OTel SDK Web End-to-End — 2026-05-19)
+
+- **`src/lib/telemetry/otel.ts`** — inicialização do OpenTelemetry SDK Web no browser:
+  - Ativo apenas em produção (`NEXT_PUBLIC_ENVIRONMENT === 'production'`)
+  - Propagador W3C TraceContext + W3C Baggage
+  - `FetchInstrumentation`: injeta `traceparent` automaticamente em todas as requisições fetch
+  - Exportador OTLP HTTP → `/api/telemetry/traces` (proxy BFF, sem CORS)
+  - `setOtelUserContext(userId, traceSessionId)`: propaga identidade do usuário no W3C Baggage
+  - `clearOtelUserContext()`: limpa baggage no logout
+  - Inicializado via dynamic import em `providers.tsx` (nunca no SSR)
+- **`src/app/api/telemetry/traces/route.ts`** — proxy OTLP Next.js Route Handler:
+  - Recebe traces do browser (same-origin) e repassa para `otel-collector:4318`
+  - Controlado por `OTEL_COLLECTOR_HTTP_URL` (vazio = desativado silenciosamente em dev)
+  - Falha graciosa: telemetria nunca quebra a aplicação (retorna 200 sempre)
+- **`FORWARDED_HEADERS`** em `api-client.ts` — adicionados `traceparent`, `tracestate`, `baggage`:
+  - Propaga contexto W3C do browser → BFF → Java Gateway (mesmo traceId no SigNoz)
+- **`src/stores/auth.ts`** — campo `traceSessionId`:
+  - `crypto.randomUUID()` gerado a cada login — distingue 2 browsers do mesmo usuário no OTel
+  - Propagado como `baggage: userId=X,traceSessionId=Y` em todas as requisições autenticadas
+- **`docs/technical/OBSERVABILITY.md`** — documentação completa da arquitetura OTel
+- **`next.config.ts`** — webpack fallback para módulos Node.js (fs, path, os, module) no browser bundle
+
+### Changed (Sessão 11)
+
+- `src/app/providers.tsx` — `useEffect` para initOtel() + subscribe ao auth store para setOtelUserContext()
+- `.env` — adicionado `OTEL_COLLECTOR_HTTP_URL=` (vazio em dev)
+- `.env.prod` — adicionado `OTEL_COLLECTOR_HTTP_URL=http://otel-collector:4318`
+
+> **Ação necessária**: atualizar secret `PROD_ENV` no GitHub Actions com o novo valor `OTEL_COLLECTOR_HTTP_URL=http://otel-collector:4318`
+
+---
+
 ### Added (Sessão 10 — Route Groups + Layout Isolation — 2026-05-18)
 
 - Route groups Next.js App Router — 3 áreas **completamente isoladas** (sem compartilhamento de layout):
