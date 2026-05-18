@@ -1,4 +1,5 @@
 import { resolveDeviceInfo } from '@/lib/device'
+import { propagation, context } from '@opentelemetry/api'
 
 // ─── Tipos ────────────────────────────────────────────────────────────────────
 
@@ -76,6 +77,25 @@ httpClient.use(async (ctx, next) => {
       ...ctx.init.headers,
       'device-info': cachedDeviceInfo,
     }
+  }
+
+  return next()
+})
+
+/**
+ * Middleware OTel: injeta W3C TraceContext (traceparent, tracestate, baggage)
+ * em todas as requisições feitas via httpClient, quando há um span ativo.
+ *
+ * - NoOp quando OTel não está inicializado (propagation é NoOp por padrão)
+ * - NoOp quando não há span ativo no contexto (ex: ROOT_CONTEXT sem traceID)
+ * - SSR-safe: a @opentelemetry/api nunca acessa window
+ */
+httpClient.use(async (ctx, next) => {
+  const carrier: Record<string, string> = {}
+  propagation.inject(context.active(), carrier)
+
+  if (Object.keys(carrier).length > 0) {
+    ctx.init.headers = { ...ctx.init.headers, ...carrier }
   }
 
   return next()
