@@ -57,6 +57,31 @@ export const httpClient = new HttpClient()
 // ─── Middlewares padrão ───────────────────────────────────────────────────────
 
 /**
+ * Middleware OTel: injeta W3C TraceContext (traceparent, tracestate, baggage)
+ * em todas as requisições feitas via httpClient, quando há um span ativo.
+ *
+ * DEVE ser o PRIMEIRO middleware registrado: StackContextManager (browser) só
+ * propaga contexto OTel na parte síncrona da cadeia de chamadas — antes do
+ * primeiro await. Middlewares posteriores (ex: device-info com await) fazem
+ * o contexto ser desempilhado antes de chegarem aqui.
+ *
+ * - Síncrono (sem await): garante captura do contexto ativo antes de qualquer await
+ * - NoOp quando OTel não inicializado (propagation API usa NoOp por padrão)
+ * - NoOp quando não há span ativo (ROOT_CONTEXT sem traceID não injeta nada)
+ * - SSR-safe: @opentelemetry/api nunca acessa window
+ */
+httpClient.use((ctx, next) => {
+  const carrier: Record<string, string> = {}
+  propagation.inject(context.active(), carrier)
+
+  if (Object.keys(carrier).length > 0) {
+    ctx.init.headers = { ...ctx.init.headers, ...carrier }
+  }
+
+  return next()
+})
+
+/**
  * Injeta automaticamente o header `device-info` em todas as requisições
  * feitas via `httpClient.fetch`, usando o provider registrado em `device-info.ts`.
  *
@@ -77,25 +102,6 @@ httpClient.use(async (ctx, next) => {
       ...ctx.init.headers,
       'device-info': cachedDeviceInfo,
     }
-  }
-
-  return next()
-})
-
-/**
- * Middleware OTel: injeta W3C TraceContext (traceparent, tracestate, baggage)
- * em todas as requisições feitas via httpClient, quando há um span ativo.
- *
- * - NoOp quando OTel não está inicializado (propagation é NoOp por padrão)
- * - NoOp quando não há span ativo no contexto (ex: ROOT_CONTEXT sem traceID)
- * - SSR-safe: a @opentelemetry/api nunca acessa window
- */
-httpClient.use(async (ctx, next) => {
-  const carrier: Record<string, string> = {}
-  propagation.inject(context.active(), carrier)
-
-  if (Object.keys(carrier).length > 0) {
-    ctx.init.headers = { ...ctx.init.headers, ...carrier }
   }
 
   return next()
