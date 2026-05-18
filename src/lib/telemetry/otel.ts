@@ -5,6 +5,8 @@ import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http'
 import { W3CTraceContextPropagator, W3CBaggagePropagator, CompositePropagator } from '@opentelemetry/core'
 import { Resource } from '@opentelemetry/resources'
 import { ATTR_SERVICE_NAME, ATTR_SERVICE_VERSION } from '@opentelemetry/semantic-conventions'
+import { registerInstrumentations } from '@opentelemetry/instrumentation'
+import { FetchInstrumentation } from '@opentelemetry/instrumentation-fetch'
 
 // ─── Inicialização singleton ───────────────────────────────────────────────────
 
@@ -15,7 +17,8 @@ let initialized = false
  *
  * - Ativo apenas em produção (NEXT_PUBLIC_ENVIRONMENT === 'production')
  * - Exporta via OTLP HTTP para o proxy BFF → otel-collector → SigNoz
- * - Propaga W3C TraceContext (`traceparent`) em todas as requisições fetch
+ * - Propaga W3C TraceContext (`traceparent`) em todas as requisições fetch via
+ *   FetchInstrumentation (monkey-patch de window.fetch) + middleware manual no httpClient
  * - Seguro para chamar múltiplas vezes (idempotente)
  *
  * Diagrama de fluxo:
@@ -47,6 +50,21 @@ export function initOtel(): void {
     propagator: new CompositePropagator({
       propagators: [new W3CTraceContextPropagator(), new W3CBaggagePropagator()],
     }),
+  })
+
+  // Monkey-patcha window.fetch para injetar traceparent automaticamente em cada requisição.
+  // Cria um HTTP CLIENT span filho do span ativo (startActiveSpan), garantindo
+  // a propagação mesmo que o middleware manual do httpClient não capture o contexto.
+  registerInstrumentations({
+    instrumentations: [
+      new FetchInstrumentation({
+        // Propaga traceparent para todas as origens (same-origin + cross-origin)
+        propagateTraceHeaderCorsUrls: [/.*/],
+        clearTimingResources: true,
+        // Evita criar span para o próprio endpoint OTLP (previne loop infinito)
+        ignoreUrls: [/\/api\/telemetry/],
+      }),
+    ],
   })
 }
 
