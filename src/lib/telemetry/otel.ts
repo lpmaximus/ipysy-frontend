@@ -3,7 +3,7 @@ import { propagation, context, trace } from '@opentelemetry/api'
 import { WebTracerProvider, SimpleSpanProcessor } from '@opentelemetry/sdk-trace-web'
 import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http'
 import { registerInstrumentations } from '@opentelemetry/instrumentation'
-import { getWebAutoInstrumentations } from '@opentelemetry/auto-instrumentations-web'
+import { FetchInstrumentation } from '@opentelemetry/instrumentation-fetch'
 import { W3CTraceContextPropagator, W3CBaggagePropagator, CompositePropagator } from '@opentelemetry/core'
 import { Resource } from '@opentelemetry/resources'
 import { ATTR_SERVICE_NAME, ATTR_SERVICE_VERSION } from '@opentelemetry/semantic-conventions'
@@ -52,17 +52,14 @@ export function initOtel(): void {
 
   registerInstrumentations({
     instrumentations: [
-      getWebAutoInstrumentations({
+      // FetchInstrumentation direta — mais confiável que getWebAutoInstrumentations
+      // para garantir que window.fetch seja patchado antes da primeira requisição
+      new FetchInstrumentation({
         // Injeta traceparent em TODOS os fetches (same-origin e cross-origin)
-        '@opentelemetry/instrumentation-fetch': {
-          propagateTraceHeaderCorsUrls: [/.*/],
-          clearTimingResources: true,
-          // Evita instrumentar o próprio endpoint OTLP (loop infinito)
-          ignoreUrls: [/\/api\/telemetry/],
-        },
-        '@opentelemetry/instrumentation-document-load': {},
-        '@opentelemetry/instrumentation-user-interaction': { enabled: false },
-        '@opentelemetry/instrumentation-xml-http-request': { enabled: false },
+        propagateTraceHeaderCorsUrls: [/.*/],
+        clearTimingResources: true,
+        // Evita instrumentar o próprio endpoint OTLP (loop infinito)
+        ignoreUrls: [/\/api\/telemetry/],
       }),
     ],
   })
