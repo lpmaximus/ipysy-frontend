@@ -41,7 +41,11 @@ export function initOtel(): void {
   })
 
   // Exporta para o proxy BFF (same-origin → sem CORS), que repassa ao otel-collector:4318
-  const exporter = new OTLPTraceExporter({ url: '/api/telemetry/traces' })
+  // OTLPTraceExporter requer URL absoluta — window.location.origin garante isso em
+  // qualquer ambiente (localhost, staging, produção) sem depender de env vars
+  const exporter = new OTLPTraceExporter({
+    url: `${window.location.origin}/api/telemetry/traces`,
+  })
 
   const provider = new WebTracerProvider({
     resource,
