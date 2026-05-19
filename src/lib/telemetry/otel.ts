@@ -36,6 +36,8 @@ export function initOtel(): void {
 
   initialized = true
 
+  console.log('[OTel] inicializando SDK — service:', 'ipysy-frontend')
+
   const resource = new Resource({
     [ATTR_SERVICE_NAME]: 'ipysy-frontend',
     [ATTR_SERVICE_VERSION]: process.env.NEXT_PUBLIC_VERSION ?? '0.0.1-dev',
@@ -82,6 +84,8 @@ export function initOtel(): void {
       }),
     ],
   })
+
+  console.log('[OTel] instrumentações registradas — spans ativos')
 }
 
 // ─── Identidade do usuário em Baggage ─────────────────────────────────────────
