@@ -4,14 +4,13 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
 import { useState, useEffect, type ReactNode } from 'react'
 import { useAuthStore } from '@/stores/auth'
-import { initOtel, setOtelUserContext } from '@/lib/telemetry/otel'
 
-// Static import garante que otel.ts é incluído no bundle principal (sem code-split).
-// initOtel() é chamado no nível do módulo → executa SINCRONAMENTE quando o JS
-// é carregado no browser, antes do primeiro render e antes de qualquer fetch.
-// SSR-safe: initOtel() tem guard `typeof window === 'undefined'` → no-op no servidor.
+// Dynamic import: carrega o bundle OTel de forma assíncrona sem bloquear a
+// hidratação do React. O módulo é code-split e buscado logo na avaliação
+// do módulo (antes do primeiro render), minimizando a janela de race condition.
+// SSR-safe: typeof window === 'undefined' no servidor — não executa no servidor.
 if (typeof window !== 'undefined') {
-  initOtel()
+  import('@/lib/telemetry/otel').then(({ initOtel }) => initOtel())
 }
 
 function makeQueryClient() {
@@ -52,7 +51,9 @@ export function Providers({ children }: { children: ReactNode }) {
   useEffect(() => {
     // Propaga identidade do usuário logado no W3C Baggage (apenas produção)
     if (!user || !traceSessionId) return
-    setOtelUserContext(user.id, traceSessionId)
+    import('@/lib/telemetry/otel').then(({ setOtelUserContext }) => {
+      setOtelUserContext(user.id, traceSessionId)
+    })
   }, [user?.id, traceSessionId])
 
   return (
@@ -64,3 +65,5 @@ export function Providers({ children }: { children: ReactNode }) {
     </QueryClientProvider>
   )
 }
+
+
