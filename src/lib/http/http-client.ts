@@ -1,5 +1,5 @@
 import { resolveDeviceInfo } from '@/lib/device'
-import { propagation, context } from '@opentelemetry/api'
+import { propagation, context, trace, SpanKind } from '@opentelemetry/api'
 
 // ─── Tipos ────────────────────────────────────────────────────────────────────
 
@@ -57,28 +57,51 @@ export const httpClient = new HttpClient()
 // ─── Middlewares padrão ───────────────────────────────────────────────────────
 
 /**
- * Middleware OTel: injeta W3C TraceContext (traceparent, tracestate, baggage)
- * em todas as requisições feitas via httpClient, quando há um span ativo.
+ * Middleware OTel: cria um span HTTP CLIENT para cada requisição e injeta
+ * W3C TraceContext (traceparent, tracestate, baggage) nos headers.
  *
- * DEVE ser o PRIMEIRO middleware registrado: StackContextManager (browser) só
- * propaga contexto OTel na parte síncrona da cadeia de chamadas — antes do
- * primeiro await. Middlewares posteriores (ex: device-info com await) fazem
- * o contexto ser desempilhado antes de chegarem aqui.
+ * Diferente da abordagem anterior (que dependia de um span já ativo via
+ * startActiveSpan + StackContextManager), este middleware CRIA o próprio span
+ * — garantindo que traceparent seja injetado mesmo sem contexto ativo.
  *
- * - Síncrono (sem await): garante captura do contexto ativo antes de qualquer await
- * - NoOp quando OTel não inicializado (propagation API usa NoOp por padrão)
- * - NoOp quando não há span ativo (ROOT_CONTEXT sem traceID não injeta nada)
- * - SSR-safe: @opentelemetry/api nunca acessa window
+ * - NoOp quando OTel não inicializado: trace.getTracer() retorna NoOp tracer,
+ *   startSpan() retorna NoOp span, propagation.inject() não injeta nada
+ * - Se há span ativo (ex: waitlist.ts usa startActiveSpan), o span criado
+ *   aqui vira filho desse span automaticamente via context.active()
+ * - SSR-safe: @opentelemetry/api é NoOp no servidor (sem provider registrado)
  */
 httpClient.use((ctx, next) => {
+  const tracer = trace.getTracer('ipysy-frontend')
+
+  // Cria span HTTP CLIENT — pai é o span ativo (se houver), caso contrário root
+  const span = tracer.startSpan(
+    `HTTP ${(ctx.init.method ?? 'GET').toUpperCase()} ${ctx.url}`,
+    { kind: SpanKind.CLIENT },
+    context.active(),
+  )
+
+  // Injeta traceparent/baggage a partir do contexto que contém o span criado
+  const ctxWithSpan = trace.setSpan(context.active(), span)
   const carrier: Record<string, string> = {}
-  propagation.inject(context.active(), carrier)
+  propagation.inject(ctxWithSpan, carrier)
 
   if (Object.keys(carrier).length > 0) {
     ctx.init.headers = { ...ctx.init.headers, ...carrier }
   }
 
-  return next()
+  // Finaliza o span após o fetch (sucesso ou erro)
+  return next().then(
+    (response) => {
+      span.setAttribute('http.status_code', response.status)
+      span.end()
+      return response
+    },
+    (error) => {
+      span.recordException(error as Error)
+      span.end()
+      throw error
+    },
+  )
 })
 
 /**
