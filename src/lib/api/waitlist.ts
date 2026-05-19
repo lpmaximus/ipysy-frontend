@@ -10,13 +10,14 @@ export interface WaitlistResult {
 // ─── Função ───────────────────────────────────────────────────────────────────
 
 import { httpClient } from '@/lib/http/http-client'
-import { trace } from '@opentelemetry/api'
 
 /**
  * Envia e-mail para a waitlist via Route Handler interno (/api/waitlist),
  * que proxia para o Gateway backend em POST /api/v1/users/waitlist.
  *
  * O header `device-info` é injetado automaticamente pelo middleware do httpClient.
+ * O `traceparent` W3C é injetado pelo middleware OTel do httpClient.
+ * Atributos do body JSON são adicionados ao span automaticamente pelo middleware.
  *
  * Retornos mapeados do diagrama B3-waitlist-comingsoon.puml:
  *   201 → success            (novo cadastro)
@@ -26,50 +27,34 @@ import { trace } from '@opentelemetry/api'
  *   5xx → error              (Gateway/rede indisponível)
  */
 export async function registerWaitlist(email: string): Promise<WaitlistResult> {
-  const tracer = trace.getTracer('ipysy-frontend')
-
-  return tracer.startActiveSpan('waitlist.register', async (span): Promise<WaitlistResult> => {
-    try {
-      const res = await httpClient.fetch('/api/waitlist', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email }),
-      })
-
-      const data = await res.json()
-
-      span.setAttributes({
-        'http.status_code': res.status,
-        'waitlist.email_domain': email.split('@')[1] ?? 'unknown',
-      })
-      span.end()
-
-      if (res.status === 201) {
-        return {
-          status: 'success',
-          message: data.message ?? 'Solicitação recebida! Você será um dos primeiros a ser convidado.',
-        }
-      }
-
-      if (res.status === 200 && data.already_registered) {
-        return {
-          status: 'already_registered',
-          message: data.message ?? 'Você já está na lista! Você será um dos primeiros a saber.',
-        }
-      }
-
-      // 400: violations array | 422: message + rejectedBy | 5xx: errors array ou mensagem genérica
-      const message =
-        data.violations?.[0]?.message ??
-        data.errors?.[0]?.message ??
-        data.message ??
-        'Erro ao processar sua solicitação. Tente novamente.'
-
-      return { status: 'error', message }
-    } catch (err) {
-      span.recordException(err as Error)
-      span.end()
-      throw err
-    }
+  const res = await httpClient.fetch('/api/waitlist', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email }),
   })
+
+  const data = await res.json()
+
+  if (res.status === 201) {
+    return {
+      status: 'success',
+      message: data.message ?? 'Solicitação recebida! Você será um dos primeiros a ser convidado.',
+    } satisfies WaitlistResult
+  }
+
+  if (res.status === 200 && data.already_registered) {
+    return {
+      status: 'already_registered',
+      message: data.message ?? 'Você já está na lista! Você será um dos primeiros a saber.',
+    } satisfies WaitlistResult
+  }
+
+  // 400: violations array | 422: message + rejectedBy | 5xx: errors array ou mensagem genérica
+  const message =
+    data.violations?.[0]?.message ??
+    data.errors?.[0]?.message ??
+    data.message ??
+    'Erro ao processar sua solicitação. Tente novamente.'
+
+  return { status: 'error', message } satisfies WaitlistResult
 }

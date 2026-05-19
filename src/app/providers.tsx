@@ -13,6 +13,9 @@ import { useAuthStore } from '@/stores/auth'
 const otelModulePromise =
   typeof window !== 'undefined' ? import('@/lib/telemetry/otel') : null
 
+const otelLogsModulePromise =
+  typeof window !== 'undefined' ? import('@/lib/telemetry/logger') : null
+
 function makeQueryClient() {
   return new QueryClient({
     defaultOptions: {
@@ -49,12 +52,18 @@ export function Providers({ children }: { children: ReactNode }) {
   const traceSessionId = useAuthStore((s) => s.traceSessionId)
 
   useEffect(() => {
-    // Inicializa OTel após hidratação — useEffect roda antes de qualquer interação
-    // do usuário (browser não processa eventos antes de pintar, e useEffect do
-    // primeiro mount corre antes do paint). O módulo já está em preload desde a
-    // avaliação do módulo acima, então o .then() resolve imediatamente.
     if (otelModulePromise) {
-      otelModulePromise.then(({ initOtel }) => initOtel())
+      otelModulePromise
+        .then(({ initOtel }) => {
+          console.log('[OTel] módulo carregado, chamando initOtel()')
+          initOtel()
+        })
+        .catch((err) => console.error('[OTel] falha ao carregar módulo:', err))
+    }
+    if (otelLogsModulePromise) {
+      otelLogsModulePromise
+        .then(({ initOtelLogs }) => initOtelLogs())
+        .catch((err) => console.error('[OTel logs] falha ao carregar módulo:', err))
     }
   }, [])
 

@@ -5,6 +5,8 @@ import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http'
 import { W3CTraceContextPropagator, W3CBaggagePropagator, CompositePropagator } from '@opentelemetry/core'
 import { Resource } from '@opentelemetry/resources'
 import { ATTR_SERVICE_NAME, ATTR_SERVICE_VERSION } from '@opentelemetry/semantic-conventions'
+import { registerInstrumentations } from '@opentelemetry/instrumentation'
+import { getWebAutoInstrumentations } from '@opentelemetry/auto-instrumentations-web'
 
 // ─── Inicialização singleton ───────────────────────────────────────────────────
 
@@ -34,6 +36,8 @@ export function initOtel(): void {
 
   initialized = true
 
+  console.log('[OTel] inicializando SDK — service:', 'ipysy-frontend')
+
   const resource = new Resource({
     [ATTR_SERVICE_NAME]: 'ipysy-frontend',
     [ATTR_SERVICE_VERSION]: process.env.NEXT_PUBLIC_VERSION ?? '0.0.1-dev',
@@ -58,6 +62,30 @@ export function initOtel(): void {
       propagators: [new W3CTraceContextPropagator(), new W3CBaggagePropagator()],
     }),
   })
+
+  // Registra instrumentações automáticas: document-load, fetch, user-interaction
+  // FetchInstrumentation faz monkey-patch em window.fetch e propaga traceparent
+  // automaticamente em todas as requisições ao gateway (api.ipysy.com)
+  registerInstrumentations({
+    tracerProvider: provider,
+    instrumentations: [
+      getWebAutoInstrumentations({
+        '@opentelemetry/instrumentation-document-load': {},
+        '@opentelemetry/instrumentation-fetch': {
+          propagateTraceHeaderCorsUrls: [/api\.ipysy\.com/],
+          clearTimingResources: true,
+        },
+        '@opentelemetry/instrumentation-user-interaction': {
+          eventNames: ['click'],
+        },
+        '@opentelemetry/instrumentation-xml-http-request': {
+          enabled: false,
+        },
+      }),
+    ],
+  })
+
+  console.log('[OTel] instrumentações registradas — spans ativos')
 }
 
 // ─── Identidade do usuário em Baggage ─────────────────────────────────────────

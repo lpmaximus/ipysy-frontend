@@ -11,7 +11,8 @@ import { type NextRequest, NextResponse } from 'next/server'
 export async function POST(request: NextRequest): Promise<NextResponse> {
   const collectorUrl = process.env.OTEL_COLLECTOR_HTTP_URL
 
-  // Em desenvolvimento ou sem collector configurado, descarta silenciosamente
+  console.log('[OTel proxy] recebido POST — collector:', collectorUrl ?? '(vazio → descartando)')
+
   if (!collectorUrl) {
     return new NextResponse(null, { status: 200 })
   }

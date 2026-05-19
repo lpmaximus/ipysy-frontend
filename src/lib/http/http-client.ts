@@ -1,5 +1,34 @@
 import { resolveDeviceInfo } from '@/lib/device'
-import { propagation, context, trace, SpanKind } from '@opentelemetry/api'
+import { type Attributes, propagation, context, trace, SpanKind } from '@opentelemetry/api'
+
+// Campos que nunca devem aparecer em traces (PII / credenciais)
+const SENSITIVE_KEYS = new Set([
+  'password', 'senha', 'token', 'secret', 'key', 'auth',
+  'credential', 'authorization', 'cvv', 'card', 'cpf', 'ssn',
+])
+
+/**
+ * Extrai campos primitivos do corpo JSON como atributos de span.
+ * Campos sensíveis (password, token, etc.) são ignorados automaticamente.
+ */
+function extractBodyAttributes(body: BodyInit | null | undefined): Attributes {
+  if (typeof body !== 'string') return {}
+  try {
+    const parsed: unknown = JSON.parse(body)
+    if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) return {}
+
+    const attrs: Attributes = {}
+    for (const [k, v] of Object.entries(parsed as Record<string, unknown>)) {
+      if (SENSITIVE_KEYS.has(k.toLowerCase())) continue
+      if (typeof v === 'string' || typeof v === 'number' || typeof v === 'boolean') {
+        attrs[`http.request.body.${k}`] = v
+      }
+    }
+    return attrs
+  } catch {
+    return {}
+  }
+}
 
 // ─── Tipos ────────────────────────────────────────────────────────────────────
 
@@ -74,9 +103,10 @@ httpClient.use((ctx, next) => {
   const tracer = trace.getTracer('ipysy-frontend')
 
   // Cria span HTTP CLIENT — pai é o span ativo (se houver), caso contrário root
+  const bodyAttrs = extractBodyAttributes(ctx.init.body)
   const span = tracer.startSpan(
     `HTTP ${(ctx.init.method ?? 'GET').toUpperCase()} ${ctx.url}`,
-    { kind: SpanKind.CLIENT },
+    { kind: SpanKind.CLIENT, attributes: bodyAttrs },
     context.active(),
   )
 
