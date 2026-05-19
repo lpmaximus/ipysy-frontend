@@ -39,7 +39,35 @@ export function initOtelLogs(): void {
   // Registra globalmente — logs.getLogger() usa este provider
   logs.setGlobalLoggerProvider(loggerProvider)
 
+  // Patch automático do console — redireciona para OTel sem mudar o código existente
+  patchConsole()
+
   console.log('[OTel] logs SDK inicializado')
+}
+
+// ─── Patch automático do console ──────────────────────────────────────────────
+
+function patchConsole(): void {
+  const original = {
+    log: console.log.bind(console),
+    warn: console.warn.bind(console),
+    error: console.error.bind(console),
+  }
+
+  console.log = (...args: unknown[]) => {
+    original.log(...args)
+    emit(SeverityNumber.INFO, 'INFO', args.map(String).join(' '))
+  }
+
+  console.warn = (...args: unknown[]) => {
+    original.warn(...args)
+    emit(SeverityNumber.WARN, 'WARN', args.map(String).join(' '))
+  }
+
+  console.error = (...args: unknown[]) => {
+    original.error(...args)
+    emit(SeverityNumber.ERROR, 'ERROR', args.map(String).join(' '))
+  }
 }
 
 // ─── Logger público ────────────────────────────────────────────────────────────
