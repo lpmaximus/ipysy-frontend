@@ -1,5 +1,5 @@
 import { logs, SeverityNumber } from '@opentelemetry/api-logs'
-import { LoggerProvider, SimpleLogRecordProcessor } from '@opentelemetry/sdk-logs'
+import { LoggerProvider, BatchLogRecordProcessor } from '@opentelemetry/sdk-logs'
 import { OTLPLogExporter } from '@opentelemetry/exporter-logs-otlp-http'
 import { trace, context } from '@opentelemetry/api'
 
@@ -31,9 +31,14 @@ export function initOtelLogs(): void {
     url: `${window.location.origin}/api/telemetry/logs`,
   })
 
-  // Nesta versão do sdk-logs os processors são passados no construtor
   const loggerProvider = new LoggerProvider({
-    processors: [new SimpleLogRecordProcessor(exporter)],
+    processors: [
+      new BatchLogRecordProcessor(exporter, {
+        scheduledDelayMillis: 10_000,
+        maxExportBatchSize: 20,
+        maxQueueSize: 100,
+      }),
+    ],
   })
 
   // Registra globalmente — logs.getLogger() usa este provider

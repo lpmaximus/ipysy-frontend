@@ -1,6 +1,6 @@
 import type { Context } from '@opentelemetry/api'
 import { propagation, context, trace } from '@opentelemetry/api'
-import { WebTracerProvider, SimpleSpanProcessor, StackContextManager } from '@opentelemetry/sdk-trace-web'
+import { WebTracerProvider, BatchSpanProcessor, StackContextManager } from '@opentelemetry/sdk-trace-web'
 import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http'
 import { W3CTraceContextPropagator, W3CBaggagePropagator, CompositePropagator } from '@opentelemetry/core'
 import { Resource } from '@opentelemetry/resources'
@@ -53,7 +53,14 @@ export function initOtel(): void {
 
   const provider = new WebTracerProvider({
     resource,
-    spanProcessors: [new SimpleSpanProcessor(exporter)],
+    spanProcessors: [
+      new BatchSpanProcessor(exporter, {
+        // Envia lote a cada 10s ou quando acumular 20 spans
+        scheduledDelayMillis: 10_000,
+        maxExportBatchSize: 20,
+        maxQueueSize: 100,
+      }),
+    ],
   })
 
   provider.register({
@@ -74,6 +81,10 @@ export function initOtel(): void {
         '@opentelemetry/instrumentation-fetch': {
           propagateTraceHeaderCorsUrls: [/api\.ipysy\.com/],
           clearTimingResources: true,
+          // Exclui as rotas de telemetria para evitar loop infinito:
+          // sem isso cada POST /api/telemetry/traces geraria um novo span
+          // que dispararia outro POST, e assim por diante.
+          ignoreUrls: [/\/api\/telemetry\//],
         },
         '@opentelemetry/instrumentation-user-interaction': {
           eventNames: ['click'],
