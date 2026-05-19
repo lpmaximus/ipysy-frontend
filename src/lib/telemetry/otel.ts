@@ -25,7 +25,12 @@ let initialized = false
  */
 export function initOtel(): void {
   if (initialized || typeof window === 'undefined') return
-  if (process.env.NEXT_PUBLIC_ENVIRONMENT !== 'production') return
+
+  // Ativo em produção OU quando NEXT_PUBLIC_OTEL_ENABLED=true (testes locais)
+  const isEnabled =
+    process.env.NEXT_PUBLIC_ENVIRONMENT === 'production' ||
+    process.env.NEXT_PUBLIC_OTEL_ENABLED === 'true'
+  if (!isEnabled) return
 
   initialized = true
 
@@ -69,7 +74,11 @@ export function initOtel(): void {
  */
 export function setOtelUserContext(userId: string, traceSessionId: string): void {
   if (typeof window === 'undefined') return
-  if (process.env.NEXT_PUBLIC_ENVIRONMENT !== 'production') return
+
+  const isEnabled =
+    process.env.NEXT_PUBLIC_ENVIRONMENT === 'production' ||
+    process.env.NEXT_PUBLIC_OTEL_ENABLED === 'true'
+  if (!isEnabled) return
 
   const baggage = propagation.createBaggage({
     userId: { value: userId },
@@ -98,7 +107,11 @@ export function setOtelUserContext(userId: string, traceSessionId: string): void
  */
 export function clearOtelUserContext(): void {
   if (typeof window === 'undefined') return
-  if (process.env.NEXT_PUBLIC_ENVIRONMENT !== 'production') return
+
+  const isEnabled =
+    process.env.NEXT_PUBLIC_ENVIRONMENT === 'production' ||
+    process.env.NEXT_PUBLIC_OTEL_ENABLED === 'true'
+  if (!isEnabled) return
 
   const ctx: Context = propagation.setBaggage(context.active(), propagation.createBaggage())
   context.with(ctx, () => {})

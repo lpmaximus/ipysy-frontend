@@ -4,17 +4,14 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
 import { useState, useEffect, type ReactNode } from 'react'
 import { useAuthStore } from '@/stores/auth'
-import { initOtel, setOtelUserContext } from '@/lib/telemetry/otel'
 
-// Static import — FetchInstrumentation foi removida, sem monkey-patch de window.fetch,
-// sem risco de crash na hidratação React 19.
-// initOtel() é SSR-safe (guard: typeof window === 'undefined') e prod-only
-// (guard: NEXT_PUBLIC_ENVIRONMENT !== 'production').
-// Executar na avaliação do módulo garante que o provider W3C esteja registrado
-// ANTES do primeiro render e de qualquer chamada httpClient.fetch().
-if (typeof window !== 'undefined') {
-  initOtel()
-}
+// Preload: inicia o download do chunk OTel imediatamente na avaliação do módulo
+// (antes do primeiro render), mas NÃO executa initOtel() ainda.
+// A execução ocorre no useEffect — após hidratação React 19, antes de qualquer
+// interação do usuário (o browser não pinta antes do useEffect do primeiro mount).
+// SSR-safe: typeof window === 'undefined' nunca inicia o preload no servidor.
+const otelModulePromise =
+  typeof window !== 'undefined' ? import('@/lib/telemetry/otel') : null
 
 function makeQueryClient() {
   return new QueryClient({
@@ -52,9 +49,23 @@ export function Providers({ children }: { children: ReactNode }) {
   const traceSessionId = useAuthStore((s) => s.traceSessionId)
 
   useEffect(() => {
+    // Inicializa OTel após hidratação — useEffect roda antes de qualquer interação
+    // do usuário (browser não processa eventos antes de pintar, e useEffect do
+    // primeiro mount corre antes do paint). O módulo já está em preload desde a
+    // avaliação do módulo acima, então o .then() resolve imediatamente.
+    if (otelModulePromise) {
+      otelModulePromise.then(({ initOtel }) => initOtel())
+    }
+  }, [])
+
+  useEffect(() => {
     // Propaga identidade do usuário logado no W3C Baggage (apenas produção)
     if (!user || !traceSessionId) return
-    setOtelUserContext(user.id, traceSessionId)
+    if (otelModulePromise) {
+      otelModulePromise.then(({ setOtelUserContext }) => {
+        setOtelUserContext(user.id, traceSessionId)
+      })
+    }
   }, [user?.id, traceSessionId])
 
   return (
